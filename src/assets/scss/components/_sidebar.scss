@@ -1,0 +1,200 @@
+/****************
+  SIDEBAR START
+*****************/
+.codex-sidebar {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0;
+  width: 285px;
+  height: 100%;
+  transition: all 0.5s ease;
+  z-index: 4;
+  color: var(--bs-sidebar-link); /* Fixed variable syntax */
+  background-color: var(--bs-sidebar-bg); /* Fixed variable syntax */
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.05); /* Fixed $black variable */
+  overflow: hidden; /* Ensures the sidebar itself doesn't scroll */
+
+  .logo-gridwrap,
+  .icon-logo {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    transition: all 0.5s ease;
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.05); /* Fixed $black variable */
+
+    .lightlogo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      span {
+        font-size: 24px;
+        font-weight: 700;
+      }
+    }
+
+    .sidebar-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(var(--bs-primary), 0.05);
+      color: var(--bs-primary);
+      position: relative;
+
+      svg {
+        color: var(--bs-primary);
+        width: 18px;
+      }
+    }
+  }
+
+  .icon-logo {
+    display: none;
+  }
+
+  .darklogo {
+    display: none;
+  }
+
+  .codex-menu {
+    margin-top: 25px;
+    padding-bottom: 38px;
+    padding-inline-start: 20px;
+    padding-inline-end: 20px;
+    height: calc(100vh - 100px);
+    overflow-y: auto; /* Enable scrolling for the menu */
+    scroll-behavior: smooth;
+
+    /* Scrollbar styling */
+    &::-webkit-scrollbar {
+      height: auto;
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #0d6efd; /* Primary color for scrollbar thumb */
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #e9ecef; /* Light color for scrollbar track */
+    }
+  }
+
+  .cdxmenu-title {
+    padding: 10px 15px;
+    font-weight: 600;
+    border-radius: 2px;
+    border-left: 5px solid var(--bs-primary);
+    background-color: rgba(var(--bs-primary), 0.1);
+    margin-bottom: 10px;
+    margin-top: 10px;
+
+    h5 {
+      font-size: 14px;
+      text-transform: capitalize;
+      font-weight: 600;
+      color: var(--bs-primary);
+    }
+  }
+
+  li {
+    position: relative;
+
+    &.menu-item {
+      > a {
+        font-weight: 500;
+      }
+
+      &.active {
+        > a {
+          color: var(--bs-primary);
+        }
+      }
+    }
+
+    > a {
+      padding: 10px 15px;
+
+      .icon-item {
+        margin-inline-end: 10px;
+        line-height: 1;
+
+        i {
+          font-size: 20px;
+        }
+
+        svg {
+          width: 20px;
+          height: auto;
+        }
+      }
+
+      > svg {
+        margin-inline-end: 10px;
+      }
+
+      > i {
+        font-size: 18px;
+
+        &.fa {
+          margin-inline-start: auto;
+        }
+      }
+
+      span {
+        transition: all 0.5s ease;
+        line-height: 1;
+      }
+    }
+
+    a {
+      font-style: normal;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      text-transform: capitalize;
+      position: relative;
+      color: var(--bs-font-light); /* Fixed variable syntax */
+    }
+
+    .submenu-list,
+    .secondsubmenu-list {
+      display: none;
+    }
+
+    &.active {
+      .submenu-list,
+      .secondsubmenu-list {
+        display: block;
+      }
+    }
+  }
+
+  .submenu-list {
+    padding-inline-start: 10px;
+
+    a {
+      color: var(--bs-font-light); /* Fixed variable syntax */
+      padding: 5px 25px;
+      padding-inline-start: 35px;
+    }
+
+    > li {
+      &.active {
+        > a {
+          color: var(--bs-primary);
+        }
+      }
+    }
+  }
+}
+/****************
+SIDEBAR END
+*****************/
