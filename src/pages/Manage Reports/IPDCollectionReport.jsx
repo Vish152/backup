@@ -8,7 +8,7 @@ import {
   Form,
   Button,
 } from "react-bootstrap";
-import PageBreadcrumb from "../../../componets/PageBreadcrumb";
+import PageBreadcrumb from "../../componets/PageBreadcrumb";
 import SimpleBar from "simplebar-react";
 
 const IPDCollectionReport = () => {
@@ -86,7 +86,8 @@ const IPDCollectionReport = () => {
                       </Col>
                     </Row>
                   </Form>
-<br /><br />
+                  <br />
+                  <br />
                   {/* Enquiry Data Table */}
                   <Table striped bordered hover className="mt-4">
                     <thead className="thead-light">

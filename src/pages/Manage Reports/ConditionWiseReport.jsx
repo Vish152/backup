@@ -8,7 +8,7 @@ import {
   Form,
   Button,
 } from "react-bootstrap";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import PageBreadcrumb from "../../componets/PageBreadcrumb";
 import SimpleBar from "simplebar-react";
 
 const ConditionWiseReport = () => {
@@ -89,7 +89,8 @@ const ConditionWiseReport = () => {
                       </Col>
                     </Row>
                   </Form>
-<br /><br />
+                  <br />
+                  <br />
                   {/* Condition Wise Report Table */}
                   <Table striped bordered hover className="mt-4">
                     <thead className="thead-light">

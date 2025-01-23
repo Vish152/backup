@@ -1,17 +1,13 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 const IPDDueReport = () => {
   // State for form inputs
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Placeholder data for enquiry data (can be replaced with real API data)
   const enquiryData = [
-    {
-      date: "2025-01-01",
-      customer: "John Smith",
-      enquiryType: "Service Inquiry",
-    },
+    { date: '2025-01-01', customer: 'John Smith', enquiryType: 'Service Inquiry' },
   ];
 
   // Filter data based on selected dates
@@ -50,12 +46,17 @@ const IPDDueReport = () => {
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
             />
-            <button className="find-button" onClick={handleFindClick}>
+            <button
+              className="find-button"
+              onClick={handleFindClick}
+            >
               Find
             </button>
           </div>
         </div>
       </div>
+
+      
     </div>
   );
 };

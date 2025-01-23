@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { FilterMatchMode, FilterOperator } from "primereact/api";
+import React, { useState, useEffect } from "react";
+import { FilterMatchMode } from "primereact/api";
 import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 import FeatherIcon from "feather-icons-react";
-
 import { Link } from "react-router-dom";
 import {
   Container,
@@ -11,424 +11,470 @@ import {
   Card,
   Form,
   InputGroup,
-  Modal,
   Button,
+  Spinner,
+  Modal,
 } from "react-bootstrap";
-
-import IMAGE_URLS from "/src/pages/api/Imgconfig.js";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 
+const BASE_URL = "http://192.168.90.206:5000/api"; // Update your API base URL here
+
 export default function All_doctor() {
-  const [show, setShow] = useState(false);
-
-  const Close_btn = () => setShow(false);
-  const emailcreat = () => setShow(true);
-  //  Inuut value start
-  const [formData, setFormData] = useState({
-    name: "",
-    department: "",
-    specialization: "",
-    degree: "",
-    mobile: "",
-    email: "",
-    address: "",
-    categories: "",
-  });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-  // Data Table
-  const sales = [
-    {
-      image: "avtar/2.jpg",
-      title: "Dr. Anna Mull",
-      Department: "Cardiologistst",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Main",
-    },
-    {
-      image: "avtar/7.jpg",
-      title: "Dr. Hal Appeno",
-      Department: "Eye Special",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Assistant",
-    },
-    {
-      image: "avtar/9.jpg",
-      title: "Dr. Pat Agonia",
-      Department: "Family Physicians",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Assistant",
-    },
-    {
-      image: "avtar/3.jpg",
-      title: "Dr. Paul Molive",
-      Department: "Gynaecology",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Checkby",
-    },
-    {
-      image: "avtar/8.jpg",
-      title: "Dr. Polly Tech",
-      Department: "Heart Surgeons",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Checkby",
-    },
-    {
-      image: "avtar/5.jpg",
-      title: "Dr. Poppa Cherry",
-      Department: "Cardiologistst",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Checkby",
-    },
-    {
-      image: "avtar/6.jpg",
-      title: "Dr. Saul T. Balls",
-      Department: "Eye Special",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Madeby",
-    },
-    {
-      image: "avtar/4.jpg",
-      title: "Dr. Terry Aki",
-      Department: "Family Physicians",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Madeby",
-    },
-    {
-      image: "avtar/1.jpg",
-      title: "Dr. Tiger Nixon",
-      Department: "Gynaecology",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Main",
-    },
-    {
-      image: "avtar/2.jpg",
-      title: "Dr. Anna Mull",
-      Department: "Heart Surgeons",
-      Specialization: "Prostate",
-      Degree: "M.B.B.S",
-      Mobile: "+1 25 962689",
-      Address: "ichalkarnaji",
-      Categories: "Main",
-    },
-  ];
-  const formatCurrency = (value) => {
-    return value.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
-  };
-
-  const imageBodyTemplate = ({ image, title }) => {
-    return (
-      <div className="d-flex align-items-center">
-        <img
-          src={IMAGE_URLS[image]}
-          alt={image.image}
-          className="product-image rounded-50 w-40"
-        />
-        <span className="ml-10">{title}</span>
-      </div>
-    );
-  };
-
-  //  SearchFilter
+  const [doctors, setDoctors] = useState([]);
   const [filters1, setFilters1] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    name: {
-      operator: FilterOperator.AND,
-      constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
-    },
-    "country.name": {
-      operator: FilterOperator.AND,
-      constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }],
-    },
-    representative: { value: null, matchMode: FilterMatchMode.IN },
   });
-  const filtersMap = {
-    filters1: { value: filters1, callback: setFilters1 },
+  const [loading, setLoading] = useState(false); // Loading state
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [showEditDoctorModal, setShowEditDoctorModal] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null); // Selected doctor data
+
+  // Fetch doctors data
+  const fetchDoctorsData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/V1/admin/listDoctor`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      console.log(data); // Check the data structure in the console
+
+      if (response.ok) {
+        setDoctors(data.data || []);
+      } else {
+        console.error(
+          "Error fetching doctors:",
+          data.message || "Unknown error"
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    } finally {
+      setLoading(false);
+    }
   };
-  const onGlobalFilterChange = (event, filtersKey) => {
-    const value = event.target.value;
-    let filters = { ...filtersMap[filtersKey].value };
-    filters["global"].value = value;
 
-    filtersMap[filtersKey].callback(filters);
+  useEffect(() => {
+    fetchDoctorsData(); // Fetch data on component mount
+  }, [fromDate, toDate]);
+
+  // Handle opening the modal
+  const handleEditDoctor = (doctor) => {
+    setSelectedDoctor({ ...doctor }); // Set the doctor to edit
+    setShowEditDoctorModal(true); // Show the edit doctor modal
   };
 
-  const renderHeader = (filtersKey) => {
-    const filters = filtersMap[`${filtersKey}`].value;
-    const value = filters["global"] ? filters["global"].value : "";
+  // Handle saving changes
+  const handleSaveChanges = async () => {
+    if (!selectedDoctor) return;
 
-    return (
-      <div className="d-flex justify-content-end align-align-items-baseline">
-        <Form.Group className="d-flex align-items-center">
-          <Form.Label className="pe-3 mb-0"> Search</Form.Label>
-          <InputGroup className=" px-2">
+    try {
+      const response = await fetch(`${BASE_URL}/V1/admin/email`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedDoctor),
+      });
+
+      if (response.ok) {
+        alert("Doctor updated successfully!");
+        fetchDoctorsData(); // Refresh the data
+        setShowEditDoctorModal(false); // Close the modal
+      } else {
+        console.error("Error updating doctor:", await response.json());
+      }
+    } catch (error) {
+      console.error("Error updating doctor:", error);
+    }
+  };
+
+  // Status template for the DataTable
+  const statusBodyTemplate = (rowData) => (
+    <span
+      className={`badge ${
+        rowData.status
+          ? `status-${rowData.status.toLowerCase()}`
+          : "status-unknown"
+      }`}
+    >
+      {rowData.status || "Unknown"}
+    </span>
+  );
+
+  // Actions template for the DataTable
+  const actionBodyTemplate = (rowData) => (
+    <div className="cart-action" style={{ margin: "5px" }}>
+      <Link className="appoinment" to={`/add-appointment/${rowData.id}`}>
+        <FeatherIcon icon="plus-square" className="w-18" />
+      </Link>
+      <Button
+        variant="btn"
+        onClick={() => handleEditDoctor(rowData)}
+        className="edit-btn"
+      >
+        <FeatherIcon icon="edit" className="w-18" />
+      </Button>
+    </div>
+  );
+
+  // Header content with search and refresh button
+  const renderHeader = () => (
+    <div className="d-flex justify-content-between align-items-center">
+      {/* Left Section */}
+      <div className="d-flex align-items-center" style={{ gap: "30px" }}>
+        <Form.Group className="d-flex align-items-center pe-3 mb-0">
+          <InputGroup>
             <Form.Control
               type="search"
-              className="form-control px-2"
-              value={value || ""}
-              onChange={(e) => onGlobalFilterChange(e, filtersKey)}
+              value={filters1.global.value || ""}
+              onChange={(e) =>
+                setFilters1({
+                  global: {
+                    value: e.target.value,
+                    matchMode: FilterMatchMode.CONTAINS,
+                  },
+                })
+              }
               placeholder="Global Search"
             />
           </InputGroup>
         </Form.Group>
       </div>
-    );
-  };
-  const header1 = renderHeader("filters1");
 
-  const actionBodyTemplate = () => {
-    return (
-      <React.Fragment>
-        <div className="cart-action">
-          <Link className="edit" to="/edit-doctor">
-            <FeatherIcon icon="edit" className="w-18" />
-          </Link>
-          <Link className="delete text-danger" to="">
-            <FeatherIcon icon="trash-2" className="w-18" />
-          </Link>
-        </div>
-      </React.Fragment>
-    );
-  };
+      {/* Right Section */}
+      <div className="d-flex align-items-center" style={{ gap: "15px" }}>
+        <Form.Group className="pe-3 mb-0">
+          From Date
+          <Form.Control
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+        </Form.Group>
+        <Form.Group className="pe-3 mb-0">
+          To Date
+          <Form.Control
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+          />
+        </Form.Group>
+        <Button variant="primary" onClick={fetchDoctorsData}>
+          Refresh Data
+        </Button>
+      </div>
+    </div>
+  );
+
+  const header = renderHeader();
 
   return (
-    <>
-      <div className="themebody-wrap">
-        {/* Breadcrumb Start */}
-        <PageBreadcrumb pagename="All Doctor" />
-        {/* Breadcrumb End */}
-        {/* theme body start */}
-        <div className="theme-body">
-          <Container fluid>
-            <Row>
-              <Col>
-                <Card>
-                  <Card.Body>
-                    <Row className="Product_list">
-                      <Col md={12}>
-                        <Link
-                          className="btn btn-primary float-end mb-15"
-                          onClick={emailcreat}
-                        >
-                          <i className="fa fa-plus me-2"></i>
-                          Add Doctor
-                        </Link>
-                      </Col>
-                      <DataTable
-                        value={sales}
-                        rows={10}
-                        header={header1}
-                        filters={filters1}
-                        onFilter={(e) => setFilters1(filters1)}
-                        stateStorage="session"
-                        paginator
-                        rowsPerPageOptions={[5, 10, 50]}
-                        paginatorTemplate="CurrentPageReport  FirstPageLink  PageLinks LastPageLink  RowsPerPageDropdown"
-                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
-                        className="p-datatable-customers"
-                      >
-                        <div
-                          header="Name"
-                          sortable
-                          body={imageBodyTemplate}
-                        ></div>
-                        <div
-                          field="Department"
-                          header="Department"
-                          sortable
-                        ></div>
-                        <div
-                          field="Specialization"
-                          header="Specialization"
-                          sortable
-                        ></div>
-                        <div field="Degree" header="Degree" sortable></div>
-                        <div field="Mobile" header="Mobile" sortable></div>
-                        <div field="Address" header="Address" sortable></div>
-                        <div
-                          field="Categories"
-                          header="Categories"
-                          sortable
-                        ></div>
-                        <div
-                          field="Action"
-                          header="Action"
-                          sortable
-                          body={actionBodyTemplate}
-                          exportable={false}
-                          style={{ minWidth: "8rem" }}
-                        ></div>
-                      </DataTable>
-                    </Row>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          </Container>
-        </div>
-        {/* theme body end */}
-      </div>
-      {/* Modal Start  */}
-      <Modal show={show} onHide={Close_btn}>
-        <Modal.Header>
-          <Modal.Title>
-            <h5 className="modal-title">Add New Doctor</h5>
-          </Modal.Title>
-          <span className="close-modal" onClick={Close_btn}>
-            <FeatherIcon icon="x" />
-          </span>
+    <div className="themebody-wrap">
+      <Modal
+        show={showEditDoctorModal}
+        onHide={() => setShowEditDoctorModal(false)}
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Doctor</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="modal-body">
+        <Modal.Body>
           <Form>
             <Row>
-              <Col md={6}>
-                <Form.Group className="mb-20">
+              <Col md={4}>
+                <Form.Group controlId="formDoctorName">
                   <Form.Label>Name</Form.Label>
                   <Form.Control
                     type="text"
-                    name="name"
-                    placeholder="Enter Doctor Name"
-                    value={formData.name}
-                    onChange={handleInputChange}
+                    value={selectedDoctor?.name || ""}
+                    placeholder="Enter Name"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        name: e.target.value,
+                      })
+                    }
                   />
                 </Form.Group>
               </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
-                  <Form.Label>Department</Form.Label>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorType">
+                  <Form.Label>Doctor Type</Form.Label>
                   <Form.Control
                     type="text"
-                    name="department"
-                    required
-                    placeholder="Department"
-                    value={formData.department}
-                    onChange={handleInputChange}
+                    value={selectedDoctor?.doctor_type || ""}
+                    placeholder="Enter Doctor Type"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        doctor_type: e.target.value,
+                      })
+                    }
                   />
                 </Form.Group>
               </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
-                  <Form.Label>Specialization</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="specialization"
-                    required
-                    placeholder="Specialization"
-                    value={formData.specialization}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
-                  <Form.Label>Degree</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="degree"
-                    required
-                    placeholder="Degree"
-                    value={formData.degree}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
-                  <Form.Label>Mobile</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="mobile"
-                    required
-                    placeholder="Mobile Number"
-                    value={formData.mobile}
-                    onChange={handleInputChange}
-                  />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
+            </Row>
+            <Row>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorEmail">
                   <Form.Label>Email</Form.Label>
                   <Form.Control
                     type="email"
-                    name="email"
-                    required
-                    placeholder="Email Id"
-                    value={formData.email}
-                    onChange={handleInputChange}
+                    value={selectedDoctor?.email || ""}
+                    placeholder="Enter Email"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        email: e.target.value,
+                      })
+                    }
                   />
                 </Form.Group>
               </Col>
-
-              <Col md={6}>
-                <Form.Group className="mb-20">
-                  <Form.Label>Categories</Form.Label>
-                  <select
-                    className="form-select hidesearch"
-                    name="categories"
-                    placeholder="Select"
-                    value={formData.categories}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select</option>
-                    <option value="Main">Main</option>
-                    <option value="Assistant">Assistant</option>
-                    <option value="Checkby">Checkby</option>
-                    <option value="Madeby">Madeby</option>
-                  </select>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorPassword">
+                  <Form.Label>Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    value={selectedDoctor?.password || ""}
+                    placeholder="Enter Password"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        password: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorPhone">
+                  <Form.Label>Phone</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedDoctor?.phone || ""}
+                    placeholder="Enter Phone"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        phone: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorAddress">
+                  <Form.Label>Address</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedDoctor?.address || ""}
+                    placeholder="Enter Address"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        address: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorJobLocation">
+                  <Form.Label>Job Location</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedDoctor?.job_location || ""}
+                    placeholder="Enter Job Location"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        job_location: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="formDoctorDepartmentID">
+                  <Form.Label>Department ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedDoctor?.department_id || ""}
+                    placeholder="Enter Department ID"
+                    onChange={(e) =>
+                      setSelectedDoctor({
+                        ...selectedDoctor,
+                        department_id: e.target.value,
+                      })
+                    }
+                  />
                 </Form.Group>
               </Col>
             </Row>
           </Form>
         </Modal.Body>
-        <Modal.Footer className="modal-footer">
-          <Button className="btn btn-primary">Save</Button>
-          <Button className="btn btn-danger" onClick={Close_btn}>
-            Close
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowEditDoctorModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveChanges}>
+            Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* Modal End  */}
-    </>
+
+      {/* Breadcrumb */}
+      <PageBreadcrumb pagename="All Doctors" />
+
+      {/* Theme body */}
+      <div className="theme-body">
+        <Container fluid>
+          <Row>
+            <Col>
+              <Card>
+                <Card.Body>
+                  {loading ? ( // Show loader if data is being fetched
+                    <div className="d-flex justify-content-center py-5">
+                      <Spinner animation="border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </Spinner>
+                    </div>
+                  ) : (
+                    <DataTable
+                      value={doctors}
+                      paginator
+                      rows={10}
+                      header={header}
+                      filters={filters1}
+                      globalFilterFields={[
+                        "name",
+                        "doctor_type",
+                        "email",
+                        "password",
+                        "phone",
+                        "address",
+                        "job_location",
+                        "department_id",
+                      ]}
+                      currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+                      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+                      responsiveLayout="scroll"
+                      className="p-datatable-customers"
+                      style={{
+                        borderCollapse: "collapse", // Ensure consistent borders
+                        width: "100%",
+                      }}
+                    >
+                      <Column
+                        field="name"
+                        header="Name"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="doctor_type"
+                        header="Doctor Type"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="email"
+                        header="Email"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="password"
+                        header="Password"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="address"
+                        header="Address"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="job_location"
+                        header="Job Location"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="phone"
+                        header="Phone"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        field="department_id"
+                        header="Department ID"
+                        sortable
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                      <Column
+                        header="Actions"
+                        body={actionBodyTemplate}
+                        exportable={false}
+                        style={{
+                          border: "1px solid #dee2e6",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
+                      />
+                    </DataTable>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    </div>
   );
 }

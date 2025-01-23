@@ -109,10 +109,7 @@ const OPDIPDCollGraph = () => {
                 </FormGroup>
               </Col>
 
-              <Col
-                md={3}
-                style={{ display: "flex", alignItems: "flex-end" }}
-              >
+              <Col md={3} style={{ display: "flex", alignItems: "flex-end" }}>
                 <Button
                   onClick={handleFindClick}
                   style={{

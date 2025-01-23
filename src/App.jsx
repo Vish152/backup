@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Dashboard2 from "./pages/Dashboard2";
 import Dashboard3 from "./pages/Dashboard3";
 
+import Doctor_schedule from "./pages/Doctor_schedule";
 import All_doctor from "./pages/All_doctor";
 import Add_doctor from "./pages/Add_doctor";
 import Edit_doctor from "./pages/Edit_doctor";
@@ -20,10 +21,16 @@ import All_patient from "./pages/All_patient";
 import Add_patient from "./pages/Add_patient";
 import Edit_patient from "./pages/Edit_patient";
 
-import Doctor_schedule from "./pages/Doctor_schedule";
+import Call_logs from "./pages/Call_logs";
+
 import Add_appointment from "./pages/Add_appointment";
 import Edit_appointment from "./pages/Edit_appointment";
 import Appointment_list from "./pages/Appointment_list";
+import Add_Enquiry from "./pages/Add_Enquiry";
+import Enquiry_list from "./pages/Enquiry_List";
+
+import Add_invoice from "./pages/Add_invoice";
+import Invoice_list from "./pages/Invoice_list";
 
 import All_Hospitals from "./pages/All_Locations";
 import Add_Locations from "./pages/Add_Locations";
@@ -48,22 +55,22 @@ import Add_payment from "./pages/Add_payment";
 import Invoice from "./pages/Invoice";
 import Event_management from "./pages/Event_management";
 
-// import DailyOPDReport from "./pages/Manage Reports/DailyOPDReport";
-// import BirthdayAlert from "./pages/Manage Reports/BirthdayAlert";
-// import BillingReport from "./pages/Manage Reports/BillingReports";
-// import EnquiryConversation from "./pages/Manage Reports/EnquiryConversion";
-// import EnquiryData from "./pages/Manage Reports/EnquiryData";
-// import OPDCollectionReport from "./pages/Manage Reports/OPDCollectionReport";
-// import PharmacyCollectionReport from "./pages/Manage Reports/PharmacyCollectionReport";
-// import IPDCollectionReport from "./pages/Manage Reports/IPDCollectionReport";
-// import ReferenceReport from "./pages/Manage Reports/ReferenceReport";
-// import ConditionWiseReport from "./pages/Manage Reports/ConditionWiseReport";
-// import SxConversionReport from "./pages/Manage Reports/SxConversionReport";
-// import IPDDueReport from "./pages/Manage Reports/IPDDueReport";
-// import InsuranceDueReport from "./pages/Manage Reports/InsuranceDueReport";
-// import OPDIPDCollection from "./pages/Manage Reports/OPDIPDCollection";
-// import OPDIPDCollGraph from "./pages/Manage Reports/IPDIPDCollGraph";
-// import OPDReceiptsReport from "./pages/Manage Reports/OPDReceiptsReport";
+import DailyOPDReport from "./pages/Manage Reports/DailyOPDReport";
+import BirthdayAlert from "./pages/Manage Reports/BirthdayAlert";
+import BillingReport from "./pages/Manage Reports/BillingReports";
+import EnquiryConversation from "./pages/Manage Reports/EnquiryConversion";
+import EnquiryData from "./pages/Manage Reports/EnquiryData";
+import OPDCollectionReport from "./pages/Manage Reports/OPDCollectionReport";
+import PharmacyCollectionReport from "./pages/Manage Reports/PharmacyCollectionReport";
+import IPDCollectionReport from "./pages/Manage Reports/IPDCollectionReport";
+import ReferenceReport from "./pages/Manage Reports/ReferenceReport";
+import ConditionWiseReport from "./pages/Manage Reports/ConditionWiseReport";
+import SxConversionReport from "./pages/Manage Reports/SxConversionReport";
+import IPDDueReport from "./pages/Manage Reports/IPDDueReport";
+import InsuranceDueReport from "./pages/Manage Reports/InsuranceDueReport";
+import OPDIPDCollection from "./pages/Manage Reports/OPDIPDCollection";
+import OPDIPDCollGraph from "./pages/Manage Reports/OPDIPDCollGraph";
+import OPDReceiptsReport from "./pages/Manage Reports/OPDReceiptsReport";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -153,6 +160,7 @@ function AppContent() {
         <Route exact path="/doctor-dashboard" element={<Dashboard2 />} />
         <Route exact path="/patient-dashboard" element={<Dashboard3 />} />
 
+        <Route exact path="/doctor-schedule" element={<Doctor_schedule />} />
         <Route exact path="/all-doctors" element={<All_doctor />} />
         <Route exact path="/add-doctor" element={<Add_doctor />} />
         <Route exact path="/edit-doctor" element={<Edit_doctor />} />
@@ -160,12 +168,21 @@ function AppContent() {
         <Route exact path="/all-patients" element={<All_patient />} />
         <Route exact path="/add-patient" element={<Add_patient />} />
         <Route exact path="/edit-patient" element={<Edit_patient />} />
-        <Route exact path="/doctor-schedule" element={<Doctor_schedule />} />
-        <Route exact path="/all-hospitals" element={<All_Hospitals />} />
-        <Route exact path="/add-locations" element={<Add_Locations />} />
+
+        <Route exact path="/call-logs" element={<Call_logs />} /> 
+
         <Route exact path="/add-appointment" element={<Add_appointment />} />
         <Route exact path="/edit-appointment" element={<Edit_appointment />} />
         <Route exact path="/appointment-list" element={<Appointment_list />} />
+        <Route exact path="/add-enquiry" element={<Add_Enquiry />} />
+        <Route exact path="/enquiry-list" element={<Enquiry_list />} />
+
+        <Route exact path="/add-invoice" element={<Add_invoice />}/>
+        <Route exact path="/invoice-list" element={<Invoice_list />} />
+
+        <Route exact path="/all-hospitals" element={<All_Hospitals />} />
+        <Route exact path="/add-locations" element={<Add_Locations />} />
+
         <Route exact path="/add-receptionist" element={<Add_receptionist />} />
         <Route
           exact
@@ -197,13 +214,12 @@ function AppContent() {
         <Route exact path="/add-payment" element={<Add_payment />} />
         <Route exact path="/patient-invoice" element={<Invoice />} />
         <Route exact path="/event-management" element={<Event_management />} />
-
-        {/* <Route exact path="/dailyOPDReport" element={<DailyOPDReport />} />
+        
+        <Route exact path="/dailyOPDReport" element={<DailyOPDReport />} />
         <Route exact path="/birthdayAlert" element={<BirthdayAlert />} />
 
         <Route exact path="/billingReport" element={<BillingReport />} />
-        <Route
-          exact
+        <Route exact
           path="/enquiryConversation"
           element={<EnquiryConversation />}
         />
@@ -246,7 +262,7 @@ function AppContent() {
           exact
           path="/oPDReceiptsReport"
           element={<OPDReceiptsReport />}
-        /> */}
+        />
 
         <Route exact path="/login" element={<Login />} />
         <Route exact path="/register" element={<Register />} />

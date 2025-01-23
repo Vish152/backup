@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Row, Col, Form, Container, Card } from "react-bootstrap";
 import {
   CountryDropdown,
@@ -8,28 +8,27 @@ import {
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 import { Link } from "react-router-dom";
 
-const BASE_URL = "http://192.168.1.139:5000/api"; // Update with your backend API base URL
+const BASE_URL = "http://192.168.90.147:5000/api"; // Update with your backend API base URL
 
 export default function Add_appointment() {
   const [country, setCountry] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [state, setState] = useState(null);
   const [city, setCity] = useState(null);
-  const [doctor, setDoctor] = useState("");
-  const [fde, setFde] = useState("");
+  const [doctors, setDoctors] = useState("");
+  const [fdeList, setFdeList] = useState([]); // FDE list
+  const [departmentList, setDepartmentList] = useState([]);
+  const [type, setType] = useState("");
   const [formData, setFormData] = useState({
-    date: "",
-    doctorName: "",
+    date: new Date().toISOString().split("T")[0],
     patientName: "",
     mobileNo: "",
     address: "",
-    reference: "",
     appointmentTime: "",
-    fdeName: "",
     note: "",
-    email: "",
-    gender: "",
+    fdeId: "",
     departmentName: "",
-    appointmentWith: "",
+    doctorId: "",
     country: "",
     state: "",
     city: "",
@@ -37,12 +36,18 @@ export default function Add_appointment() {
 
   const [errors, setErrors] = useState({});
 
-  const doctorsList = ["Dr. Smith", "Dr. Lee", "Dr. Johnson", "Dr. Brown"];
-  const fdeList = ["John Doe", "Jane Smith", "Alice Johnson", "Michael Brown"];
+  // const doctorsList = ["Dr. Smith", "Dr. Lee", "Dr. Johnson", "Dr. Brown"];
+  // const fdeList = ["John Doe", "Jane Smith", "Alice Johnson", "Michael Brown"];
+
+  const typeList = ["NEW", "FOLLOW", "POSTOPERATIVE"];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevState) => ({ ...prevState, [name]: value }));
+    console.log(name, value);
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value.toUpperCase(), // Convert input to uppercase
+    }));
   };
 
   const handleSetCountry = (value) => setCountry(value);
@@ -53,18 +58,14 @@ export default function Add_appointment() {
     const newErrors = {};
     const requiredFields = [
       "date",
-      "doctorName",
       "patientName",
       "mobileNo",
       "address",
-      "reference",
       "appointmentTime",
-      "fdeName",
       "note",
-      "email",
-      "gender",
+      "fdeId",
       "departmentName",
-      "appointmentWith",
+      "doctorId",
       "country",
       "state",
       "city",
@@ -84,66 +85,167 @@ export default function Add_appointment() {
     return newErrors;
   };
 
-  const handleSubmit = async (saveType) => {
-    const validationErrors = validate();
-    console.log("Form Data:", formData);
-    setErrors(validationErrors);
+const handleSubmit = async (saveType) => {
+  const validationErrors = validate();
+  console.log("Form Data:", formData); // Log the form data before submission
+  setErrors(validationErrors);
+console.log(validationErrors);
+  if (Object.keys(validationErrors).length === 0) {
+    setLoading(true); 
+    try {
+      console.log("Sending request to backend...");
 
-    if (Object.keys(validationErrors).length === 0) {
-      try {
-        console.log("Sending request to backend...");
-        const response = await fetch(`${BASE_URL}/V1/appointment/addAppointment`, {
+      const response = await fetch(`${BASE_URL}/V1/appointment/addAppointment`,
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...formData, saveType }),
+        }
+      );
+
+      // Log the raw response to debug issues
+      console.log("Response received:", response);
+
+      // Check if the response is OK
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log("Success response from backend:", responseData);
+        alert("Appointment added successfully");
+
+        // Reset the form
+        setFormData({
+          date: new Date().toISOString().split("T")[0],
+          patientName: "",
+          mobileNo: "",
+          address: "",
+          appointmentTime: "",
+          note: "",
+          fdeId: "",
+          departmentName: "",
+          doctorName: "",
+          appointmentWith: "",
+          country: "",
+          state: "",
+          city: "",
         });
 
-        console.log("Response received:", response);
-
-        if (response.ok) {
-          alert("Appointment added successfully");
-
-          setFormData({
-            date: "",
-            doctorName: "",
-            patientName: "",
-            mobileNo: "",
-            address: "",
-            reference: "",
-            appointmentTime: "",
-            fdeName: "",
-            note: "",
-            email: "",
-            gender: "",
-            departmentName: "",
-            appointmentWith: "",
-            country: "",
-            state: "",
-            city: "",
-          });
-
-          // Reset country, state, and city
-          setCountry(null);
-          setState(null);
-          setCity(null);
-        } else {
-          const errorData = await response.json();
-          console.error("Error response from API:", errorData);
-          alert("Failed to add appointment");
-        }
-      } catch (error) {
-        console.error("Error adding appointment:", error);
-        alert("An error occurred while adding the appointment");
+        // Reset country, state, and city
+        setCountry(null);
+        setState(null);
+        setCity(null);
+      } else {
+        // Parse the error response to display meaningful information
+        const errorData = await response.json();
+        console.error("Error response from API:", errorData);
+        alert(
+          `Failed to add appointment. ${
+            errorData.message || "Please try again."
+          }`
+        );
       }
+    } catch (error) {
+      console.error("Error adding appointment:", error.message);
+      alert(
+        "An error occurred while adding the appointment. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+};
+
+  const fetchDropdownData = async () => {
+    try {
+      const doctorResponse = await fetch(
+        `${BASE_URL}/V1/appointment/doctorDropdown`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (doctorResponse.ok) {
+        const doctorData = await doctorResponse.json();
+        console.log("Doctors API Response:", doctorData); // Debug API response
+        setDoctors(Array.isArray(doctorData.data) ? doctorData.data : []);
+      } else {
+        console.error("Failed to fetch doctors:", doctorResponse.statusText);
+      }
+
+      const fdeResponse = await fetch(
+        `${BASE_URL}/V1/appointment/fdeDropdown`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (fdeResponse.ok) {
+        const fdeData = await fdeResponse.json();
+        console.log("FDE API Response:", fdeData);
+        setFdeList(Array.isArray(fdeData.data) ? fdeData.data : []);
+      } else {
+        console.error("Failed to fetch FDE list:", fdeResponse.statusText);
+      }
+
+      const departmentResponse = await fetch(
+        `${BASE_URL}/V1/appointment/departmentDropdown`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (departmentResponse.ok) {
+        const departmentData = await departmentResponse.json();
+        console.log("Department API Response:", departmentData);
+        setDepartmentList(
+          Array.isArray(departmentData.data) ? departmentData.data : []
+        );
+      } else {
+        console.error(
+          "Failed to fetch FDE list:",
+          departmentResponse.statusText
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error.message);
     }
   };
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
   return (
-    <div className="themebody-wrap">
+    <div
+      className="themebody-wrap"
+      style={{
+        background: "linear-gradient(to right, #e0f7fa, #80deea)",
+        minHeight: "100vh",
+        padding: "20px",
+        fontFamily: "'Poppins', Arial, sans-serif",
+      }}
+    >
       <PageBreadcrumb pagename="Add Appointment" />
       <Container fluid>
         <Row>
           <Col>
-            <Card>
+            <Card
+              style={{
+                borderRadius: "12px",
+                boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)",
+                borderColor: "#00bcd4",
+                background: "white",
+                border: "1px solid #00bcd4",
+              }}
+            >
               <Card.Body>
                 <Form>
                   <Row>
@@ -160,34 +262,31 @@ export default function Add_appointment() {
                       </Form.Group>
                     </Col>
 
-                    {/* Doctor Name Dropdown */}
                     <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
-                        <Form.Label>Doctor Name</Form.Label>
+                        <Form.Label>Type</Form.Label>
                         <Form.Control
                           as="select"
-                          name="doctorName"
-                          value={doctor}
+                          name="type"
+                          value={type}
                           onChange={(e) => {
-                            setDoctor(e.target.value);
+                            setType(e.target.value);
                             setFormData((prev) => ({
                               ...prev,
-                              doctorName: e.target.value,
+                              type: e.target.value,
                             }));
                           }}
                         >
-                          <option value="">Select Doctor</option>
-                          {doctorsList.map((doctorName, index) => (
-                            <option key={index} value={doctorName}>
-                              {doctorName}
+                          <option value="">Select Type</option>
+                          {typeList.map((type, index) => (
+                            <option key={index} value={type}>
+                              {type}
                             </option>
                           ))}
-                          {errors.doctorName && (
-                            <p style={{ color: "red" }}>{errors.doctorName}</p>
-                          )}
                         </Form.Control>
                       </Form.Group>
                     </Col>
+
                     {/* Patient Name */}
                     <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
@@ -210,7 +309,7 @@ export default function Add_appointment() {
                       <Form.Group className="mb-3">
                         <Form.Label>Mobile No</Form.Label>
                         <Form.Control
-                          type="text"
+                          type="number"
                           name="mobileNo"
                           value={formData.mobileNo}
                           onChange={handleInputChange}
@@ -239,20 +338,6 @@ export default function Add_appointment() {
                       </Form.Group>
                     </Col>
 
-                    {/* Reference */}
-                    <Col md={4} className="mb-4">
-                      <Form.Group className="mb-3">
-                        <Form.Label>Reference</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="reference"
-                          value={formData.reference}
-                          onChange={handleInputChange}
-                          placeholder="Enter Reference"
-                        />
-                      </Form.Group>
-                    </Col>
-
                     {/* Appointment Time */}
                     <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
@@ -272,63 +357,23 @@ export default function Add_appointment() {
                     </Col>
 
                     {/* FDE Name Dropdown */}
-                    <Col md={4} className="mb-4">
-                      <Form.Group className="mb-3">
+                    <Col md={4}>
+                      <Form.Group className="mb-20">
                         <Form.Label>FDE Name</Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="fdeName"
-                          value={fde}
-                          onChange={(e) => {
-                            setFde(e.target.value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              fdeName: e.target.value,
-                            }));
-                          }}
-                        >
-                          <option value="">Select FDE</option>
-                          {fdeList.map((fdeName, index) => (
-                            <option key={index} value={fdeName}>
-                              {fdeName}
-                            </option>
-                          ))}
-                        </Form.Control>
-                      </Form.Group>
-                    </Col>
-
-                    {/* Email */}
-                    <Col md={4} className="mb-4">
-                      <Form.Group className="mb-3">
-                        <Form.Label>Email</Form.Label>
-                        <Form.Control
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          placeholder="Enter Email"
-                        />
-                        {errors.email && (
-                          <p style={{ color: "red" }}>{errors.email}</p>
-                        )}
-                      </Form.Group>
-                    </Col>
-
-                    {/* Gender */}
-                    <Col md={4} className="mb-4">
-                      <Form.Group className="mb-3">
-                        <Form.Label>Gender</Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="gender"
-                          value={formData.gender}
+                        <Form.Select
+                          name="fdeId"
+                          value={formData.fdeId}
                           onChange={handleInputChange}
                         >
-                          <option value="">Select Gender</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </Form.Control>
+                          <option value="">Select FDE Name</option>
+                          {fdeList &&
+                            fdeList.length > 0 &&
+                            fdeList.map((fde) => (
+                              <option key={fde.FDEID} value={fde.FDEID}>
+                                {fde.FDEID} - {fde.FDEName}
+                              </option>
+                            ))}
+                        </Form.Select>
                       </Form.Group>
                     </Col>
 
@@ -336,29 +381,53 @@ export default function Add_appointment() {
                     <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
                         <Form.Label>Department Name</Form.Label>
-                        <Form.Control
-                          type="text"
+                        <Form.Select
                           name="departmentName"
-                          value={formData.departmentName}
+                          value={formData.name}
                           onChange={handleInputChange}
-                          placeholder="Enter Department Name"
-                        />
+                        >
+                          <option value="">Select a Department</option>
+                          {departmentList && departmentList.length > 0 ? (
+                            departmentList.map((department) => (
+                              <option
+                                key={department.name}
+                                value={department.name}
+                              >
+                                {department.department_id} - {department.name}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>No doctors available</option>
+                          )}
+                        </Form.Select>
                       </Form.Group>
                     </Col>
 
-                    {/* Appointment With */}
-                    <Col md={4} className="mb-4">
-                      <Form.Group className="mb-3">
-                        <Form.Label>Appointment With</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="appointmentWith"
-                          value={formData.appointmentWith}
-                          onChange={handleInputChange}
-                          placeholder="Enter Appointment With"
-                        />
-                      </Form.Group>
-                    </Col>
+                    {/* Doctor Name Dropdown */}
+                <Col md={4}>
+                  <Form.Group className="mb-20">
+                    <Form.Label>Appointment With</Form.Label>
+                    <Form.Select
+                      name="doctorId"
+                      value={formData.doctorId}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select a Doctor</option>
+                      {doctors && doctors.length > 0 ? (
+                        doctors.map((doctor) => (
+                          <option
+                            key={doctor.doctor_id}
+                            value={doctor.doctor_id}
+                          >
+                            {doctor.doctor_id} - {doctor.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No doctors available</option>
+                      )}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
 
                     {/* Country Dropdown */}
                     <Col md={4} className="mb-4">
@@ -397,7 +466,10 @@ export default function Add_appointment() {
                           }}
                           onChange={(e, value) => {
                             handleSetState(value);
-                            setFormData((prev) => ({ ...prev, state: value.name }));
+                            setFormData((prev) => ({
+                              ...prev,
+                              state: value.name,
+                            }));
                           }}
                         />
                       </Form.Group>
@@ -418,7 +490,10 @@ export default function Add_appointment() {
                           }}
                           onChange={(e, value) => {
                             handleSetCity(value);
-                            setFormData((prev) => ({ ...prev, city: value.name }));
+                            setFormData((prev) => ({
+                              ...prev,
+                              city: value.name,
+                            }));
                           }}
                         />
                       </Form.Group>

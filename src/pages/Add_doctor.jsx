@@ -1,498 +1,355 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { Row, Col, Card, Form, Container } from "react-bootstrap";
-import SimpleBar from "simplebar-react";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
-// import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Form, Container, Button, Alert } from 'react-bootstrap';
+import SimpleBar from 'simplebar-react';
+import PageBreadcrumb from '../componets/PageBreadcrumb';
+
+const BASE_URL = 'http://192.168.90.206:5000/api'; // Correct API base URL
 
 export default function Add_doctor() {
-  const [Doctordata, setDoctordata] = useState([]);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    dob: "",
-    gender: "",
-    address: "",
-    education: "",
-    designation: "",
-    department: "",
-    categories: "",
-    jobLocation: "",
-    website: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    facebookUrl: "http://www.facebook.com/",
-    twitterUrl: "http://www.twitter.com/",
-    instagramUrl: "http://www.instagram.com/",
-    googlePlusUrl: "http://www.plus.google.com",
+    name: '',
+    doctor_type: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    address: '',
+    job_location: '',
+    phone: '',
+    department_id: '',
+    profile: '', // Assuming this is a URL or file path
+    age: '', // Replaced dob with age
+    gender: '', // Added gender
   });
 
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // This will store the fetch or submit error
+  const [errors, setErrors] = useState({}); // Error state for form validation
 
-  // Handle input change
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    const { name, value, type, files } = e.target;
-    if (type === "file") {
-      setFormData({ ...formData, [name]: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+  useEffect(() => {
+    const fetchDoctorData = async () => {
+      try {
+        const email = 'drrizwan@hhc.com'; // Replace with actual email or dynamic value
+        const encodedEmail = encodeURIComponent(email); // Encode the email to handle special characters
+        const response = await fetch(`${BASE_URL}/V1/admin/addDoctor`, { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    const newErrors = validate();
-    setErrors(newErrors);
-
-    // Return true if no errors
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = () => {
-    if (validate()) {
-      alert("Doctor saved successfully!");
-      setDoctordata([...Doctordata, { formData }]);
-      console.log(Doctordata);
-    }
-  };
-
-  // Validation function
-  const validate = () => {
-    const newErrors = {};
-
-    //check required fields
-    if (!formData.firstName) newErrors.firstName = "First Name is required";
-    if (!formData.lastName) newErrors.lastName = "Last Name is required";
-    if (!formData.dob) newErrors.dob = "Date of Birth is required";
-    if (!formData.gender) newErrors.gender = "Gender is required";
-    if (!formData.address) newErrors.address = "Address is required";
-    if (!formData.education) newErrors.education = "Education is required";
-    if (!formData.designation)
-      newErrors.designation = "Designation is required";
-    if (!formData.department) newErrors.department = "Department is required";
-    if (!formData.categories) newErrors.categories = "Categories is required";
-    if (!formData.jobLocation)
-      newErrors.jobLocation = "Job Location is required";
-    if (!formData.website) newErrors.website = "Website is required";
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.phone) newErrors.phone = "Phone is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (!formData.confirmPassword)
-      newErrors.confirmPassword = "Confirm Password is required";
-
-    // Email validation
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-    if (formData.email && !emailRegex.test(formData.email))
-      newErrors.email = "Email is not valid";
-
-    // Phone validation (10 digit number)
-    const phoneRegex = /^[0-9]{10}$/;
-    if (formData.phone && !phoneRegex.test(formData.phone)) {
-      newErrors.phone = "Phone number is not valid";
-    }
-
-    // Password validation (Minimum 8 characters, at least one letter and one number)
-    if (
-      formData.password &&
-      !/(?=.*[A-Za-z])(?=.*\d).{8,}/.test(formData.password)
-    )
-      newErrors.password = "Password is not valid";
-
-    // URL validation
-    const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
-    ["facebookUrl", "twitterUrl", "instagramUrl", "googlePlusUrl"].forEach(
-      (feild) => {
-        if (formData[feild] && !urlRegex.test(formData[feild]))
-          newErrors[feild] = "URL is not valid";
+        if (response.ok) {
+          const data = await response.json();
+          setFormData(data); // Populate form fields with the fetched data
+        } else {
+          throw new Error('Failed to fetch doctor data');
+        }
+      } catch (error) {
+        setError(null); // Clear error when the component mounts and data is fetched
+        console.error('Error fetching doctor data:', error);
+      } finally {
+        setLoading(false);
       }
-    );
-    return newErrors;
+    };
+
+    fetchDoctorData();
+  }, []); // Empty dependency array to run effect once when component mounts
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Simple form validation example
+    let validationErrors = {};
+
+    // Check required fields
+    Object.keys(formData).forEach((key) => {
+      if (!formData[key] && key !== "profile") { // 'profile' may not be required
+        validationErrors[key] = `${key} is required`;
+      }
+    });
+
+    if (formData.password !== formData.confirmPassword) {
+      validationErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors); // Set validation errors
+      return;
+    }
+
+    try {
+      setLoading(true); // Set loading state while submitting data
+
+      const response = await fetch(`${BASE_URL}/V1/admin/addDoctor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData), // Send form data as JSON in the request body
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Handle success, e.g., display success message or redirect
+        alert('Doctor added successfully');
+        console.log('Doctor added:', result);
+      } else {
+        throw new Error('Failed to add doctor');
+      }
+    } catch (error) {
+      setError(error.message); // Set API error message
+      console.error('Error submitting doctor data:', error);
+    } finally {
+      setLoading(false); // Reset loading state
+    }
   };
+
+  // Static options for doctor names and job locations
+  const doctorNames = ['Dr. John Doe', 'Dr. Jane Smith', 'Dr. Richard Roe','Dr.samita chavan','Dr.shivani pawar'];
+  const jobLocations = ['pune', 'kolhapur', 'sangli','hyedrabad','kolkata','solapur'];
 
   return (
-    <div className="themebody-wrap">
+    <div className="themebody-wrap" style={{ backgroundColor: '#f4f8fb' }}>
       {/* Breadcrumb Start */}
       <PageBreadcrumb pagename="Add Doctor" />
       {/* Breadcrumb End */}
-      {/* theme body start */}
+
+      {/* Error Alert */}
+      {error && <Alert variant="danger" style={{ marginBottom: '20px', fontSize: '14px', textAlign: 'center' }}>{error}</Alert>}
+      {errors && Object.keys(errors).length > 0 && (
+        <Alert variant="danger" style={{ marginBottom: '20px', fontSize: '14px', textAlign: 'center' }}>
+          {Object.keys(errors).map((key) => (
+            <div key={key}>{errors[key]}</div>
+          ))}
+        </Alert>
+      )}
+
+      {/* Theme body start */}
       <SimpleBar className="theme-body common-dash">
         <Container fluid>
           <Row>
             <Col md={12}>
-              <Card>
-                <Card.Header>
-                  <h4>Personal Information</h4>
+              <Card style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)', padding: '20px', borderRadius: '8px', backgroundColor: '#ffffff' }}>
+                <Card.Header style={{ backgroundColor: '#e3f2fd', borderBottom: '2px solid #d1e8e2' }}>
+                  <h4 style={{ fontWeight: 'bold', fontSize: '20px', color: '#333' }}>Doctor Information</h4>
                 </Card.Header>
                 <Card.Body>
-                  <Form>
+                  <Form onSubmit={handleSubmit}>
                     <Row>
-                      <Col md={4}>
+                      {/* Doctor Name Dropdown */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
-                          <Form.Label>First Name</Form.Label>
+                          <Form.Label>Doctor Name</Form.Label>
                           <Form.Control
-                            type="text"
-                            placeholder="First Name"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                          />
-                          {errors.firstName && (
-                            <p style={{ color: "red" }}>{errors.firstName}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>last name</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Last Name"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleInputChange}
-                          />
-                          {errors.lastName && (
-                            <p style={{ color: "red" }}>{errors.lastName}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      {/* Date */}
-                      <Col md={4} className="mb-4">
-                        <Form.Group className="mb-3">
-                          <Form.Label>Date</Form.Label>
-                          <Form.Control
-                            type="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleInputChange}
-                          />
+                            as="select"
+                            name="name"
+                            value={formData.name || ''}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          >
+                            <option value="">Select Doctor Name</option>
+                            {doctorNames.map((name, index) => (
+                              <option key={index} value={name}>
+                                {name}
+                              </option>
+                            ))}
+                          </Form.Control>
+                          {errors.name && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.name}</div>}
                         </Form.Group>
                       </Col>
 
-                      <Col md={4}>
+                      {/* Doctor Type */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
-                          <Form.Label>Gender</Form.Label>
-                          <select
-                            className="form-select"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleInputChange}
-                          >
-                            <option value="Gender">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                          </select>
-                          {errors.gender && (
-                            <p style={{ color: "red" }}>{errors.gender}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Address</Form.Label>
+                          <Form.Label>Doctor Type</Form.Label>
                           <Form.Control
                             type="text"
-                            placeholder="Address"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
+                            placeholder="Doctor Type"
+                            name="doctor_type"
+                            value={formData.doctor_type || ''}
+                            onChange={(e) => setFormData({ ...formData, doctor_type: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
-                          {errors.address && (
-                            <p style={{ color: "red" }}>{errors.address}</p>
-                          )}
+                          {errors.doctor_type && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.doctor_type}</div>}
                         </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Education</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Enter Education"
-                            name="education"
-                            value={formData.education}
-                            onChange={handleInputChange}
-                          />
-                          {errors.education && (
-                            <p style={{ color: "red" }}>{errors.education}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Designation</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Enter Designation"
-                            name="designation"
-                            value={formData.designation}
-                            onChange={handleInputChange}
-                          />
-                          {errors.designation && (
-                            <p style={{ color: "red" }}>{errors.designation}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Department</Form.Label>
-                          <select
-                            className="form-select hidesearch"
-                            name="department"
-                            value={formData.department}
-                            onChange={handleInputChange}
-                          >
-                            <option value="Audiologists">Audiologists</option>
-                            <option value="Cardiologists">Cardiologists</option>
-                            <option value="Endocrinologist">
-                              Endocrinologist
-                            </option>
-                            <option value="Oncologists">Oncologists</option>
-                            <option value="Neurology">Neurology</option>
-                            <option value="Orthopedics">Orthopedics</option>
-                            <option value="Gynaecology">Gynaecology</option>
-                            <option value="Microbiology">Microbiology</option>
-                          </select>
-                          {errors.department && (
-                            <p style={{ color: "red" }}>{errors.department}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Categories</Form.Label>
-                          <select
-                            className="form-select hidesearch"
-                            name="categories"
-                            value={formData.categories}
-                            onChange={handleInputChange}
-                          >
-                            <option value="Main">Main</option>
-                            <option value="Assistant">Assistant</option>
-                            <option value="Checkby">Checkby</option>
-                            <option value="Madeby">Madeby</option>
-                          </select>
-                          {errors.categories && (
-                            <p style={{ color: "red" }}>{errors.categories}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Job Location</Form.Label>
-                          <select
-                            className="form-select hidesearch"
-                            name="job Location"
-                            value={formData.joblocation}
-                            onChange={handleInputChange}
-                          >
-                            <option value="Select">Select</option>
-                            <option value="Ahemdabad">Ahemdabad</option>
-                            <option value="Andheri">Andheri</option>
-                            <option value="Baner">Baner</option>
-                            <option value="Bangalore">Bangalore</option>
-                            <option value="Belgavi">Belgavi</option>
-                            <option value="Chakan">Chakan</option>
-                            <option value="Dighi">Dighi</option>
-                            <option value="DP Road">DP Road</option>
-                            <option value="Gurgaon">Gurgaon</option>
-                            <option value="Hinjewad">Hinjewad</option>
-                            <option value="HSR">HSR</option>
-                            <option value="Hyderabad">Hyderabad</option>
-                            <option value="Iniranagar">Iniranagar</option>
-                            <option value="Indore">Indore</option>
-                            <option value="Kalaburagi">Kalaburagi</option>
-                            <option value="Kemps-Corner">Kemps-Corner</option>
-                            <option value="Kolhapur">Kolhapur</option>
-                            <option value="Kothrud">Kothrud</option>
-                            <option value="Lathur">Lathur</option>
-                            <option value="Ludhiana">Ludhiana</option>
-                            <option value="Mysore">Mysore</option>
-                            <option value="Nashik">Nashik</option>
-                            <option value="Navi-Mumbai">Navi-Mumbai</option>
-                            <option value="Pimpri-Chinchwad">
-                              Pimpri-Chinchwad
-                            </option>
-                            <option value="Sahakarnagar">Sahakarnagar</option>
-                            <option value="Salunkhe-Vihar">
-                              Salunkhe-Viha
-                            </option>
-                            <option value="Secunderabad">Secunderabad</option>
-                            <option value="Surat">Surat</option>
-                            <option value="Thane">Thane</option>
-                            <option value="Tilak Road">Tilak Road</option>
-                            <option value="Undri">Undri</option>
-                            <option value="Vashi">Vashi</option>
-                          </select>
-                          {errors.jobLocation && (
-                            <p style={{ color: "red" }}>{errors.jobLocation}</p>
-                          )}
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Website URL</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="URL"
-                            name="website"
-                            value={formData.website}
-                            onChange={handleInputChange}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form>
-                          <Form.Group className="mb-20">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control
-                              type="text"
-                              placeholder="Email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                            />
-                            {errors.email && (
-                              <p style={{ color: "red" }}>{errors.email}</p>
-                            )}
-                          </Form.Group>
-                        </Form>
                       </Col>
 
-                      <Col md={4}>
+                      {/* Email */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
-                          <Form.Label>Phone</Form.Label>
+                          <Form.Label>Email</Form.Label>
                           <Form.Control
-                            type="text"
-                            placeholder="Phone Number"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
+                            type="email"
+                            placeholder="Email"
+                            name="email"
+                            value={formData.email || ''}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
-                          {errors.phone && (
-                            <p style={{ color: "red" }}>{errors.phone}</p>
-                          )}
+                          {errors.email && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.email}</div>}
                         </Form.Group>
                       </Col>
-                      <Col md={4}>
+
+                      {/* Password */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
                           <Form.Label>Password</Form.Label>
                           <Form.Control
                             type="password"
                             placeholder="Password"
                             name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
+                            value={formData.password || ''}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
-                          {errors.password && (
-                            <p style={{ color: "red" }}>{errors.password}</p>
-                          )}
+                          {errors.password && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.password}</div>}
                         </Form.Group>
                       </Col>
-                      <Col md={4}>
+
+                      {/* Confirm Password */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
                           <Form.Label>Confirm Password</Form.Label>
                           <Form.Control
                             type="password"
-                            placeholder="Re-enter Password"
+                            placeholder="Confirm Password"
                             name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
+                            value={formData.confirmPassword || ''}
+                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
-                          {errors.confirmPassword && (
-                            <p style={{ color: "red" }}>
-                              {errors.confirmPassword}
-                            </p>
-                          )}
+                          {errors.confirmPassword && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.confirmPassword}</div>}
                         </Form.Group>
                       </Col>
-                      <Form.Group>
-                        <Link
-                          className="btn btn-sm btn-primary"
-                          href="javascript:void(0);"
-                          onClick={handleSave}
-                        >
-                          Save
-                        </Link>
-                        <Link
-                          className="btn btn-sm btn-danger ml-8"
-                          href="javascript:void(0);"
-                        >
-                          Cancel
-                        </Link>
-                      </Form.Group>
-                    </Row>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </Col>
 
-            <Col md={15}>
-              <Card>
-                <Card.Header>
-                  <h4>Doctor Social Media Info</h4>
-                </Card.Header>
-                <Card.Body>
-                  <Form>
-                    <Row>
-                      <Col>
+                      {/* Address */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
-                          <Form.Label>Facebook URL</Form.Label>
+                          <Form.Label>Address</Form.Label>
                           <Form.Control
-                            type="url"
-                            value={formData.facebookUrl}
-                            onChange={handleInputChange}
+                            type="text"
+                            placeholder="Address"
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
+                          {errors.address && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.address}</div>}
                         </Form.Group>
                       </Col>
-                      <Col>
+
+                      {/* Job Location Dropdown */}
+                      <Col md={6}>
                         <Form.Group className="mb-20">
-                          <Form.Label>Twitter URL</Form.Label>
+                          <Form.Label>Job Location</Form.Label>
+                          <Form.Control
+                            as="select"
+                            name="job_location"
+                            value={formData.job_location || ''}
+                            onChange={(e) => setFormData({ ...formData, job_location: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          >
+                            <option value="">Select Job Location</option>
+                            {jobLocations.map((location, index) => (
+                              <option key={index} value={location}>
+                                {location}
+                              </option>
+                            ))}
+                          </Form.Control>
+                          {errors.job_location && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.job_location}</div>}
+                        </Form.Group>
+                      </Col>
+
+                      {/* Phone */}
+                      <Col md={6}>
+                        <Form.Group className="mb-20">
+                          <Form.Label>Phone</Form.Label>
+                          <Form.Control
+                            type="tel"
+                            placeholder="Phone"
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          />
+                          {errors.phone && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.phone}</div>}
+                        </Form.Group>
+                      </Col>
+
+                      {/* Department ID */}
+                      <Col md={6}>
+                        <Form.Group className="mb-20">
+                          <Form.Label>Department ID</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="Department ID"
+                            name="department_id"
+                            value={formData.department_id || ''}
+                            onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          />
+                          {errors.department_id && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.department_id}</div>}
+                        </Form.Group>
+                      </Col>
+
+                      {/* Profile */}
+                      <Col md={6}>
+                        <Form.Group className="mb-20">
+                          <Form.Label>Profile URL</Form.Label>
                           <Form.Control
                             type="url"
-                            value={formData.twitterUrl}
-                            onChange={handleInputChange}
+                            placeholder="Profile URL"
+                            name="profile"
+                            value={formData.profile || ''}
+                            onChange={(e) => setFormData({ ...formData, profile: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
                           />
+                          {errors.profile && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.profile}</div>}
+                        </Form.Group>
+                      </Col>
+
+                      {/* Age */}
+                      <Col md={6}>
+                        <Form.Group className="mb-20">
+                          <Form.Label>Age</Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="age"
+                            value={formData.age || ''}
+                            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          />
+                          {errors.age && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.age}</div>}
+                        </Form.Group>
+                      </Col>
+
+                      {/* Gender */}
+                      <Col md={6}>
+                        <Form.Group className="mb-20">
+                          <Form.Label>Gender</Form.Label>
+                          <Form.Control
+                            as="select"
+                            name="gender"
+                            value={formData.gender || ''}
+                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                            style={{ borderRadius: '8px', borderColor: '#b0e0e6', padding: '10px' }}
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </Form.Control>
+                          {errors.gender && <div className="text-danger" style={{ fontSize: '12px', marginTop: '5px' }}>{errors.gender}</div>}
                         </Form.Group>
                       </Col>
                     </Row>
-                    <Row>
-                      <Col>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Instagram URL</Form.Label>
-                          <Form.Control
-                            type="url"
-                            value={formData.instagramUrl}
-                            onChange={handleInputChange}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col>
-                        <Form.Group className="mb-20">
-                          <Form.Label>Google Plus URL</Form.Label>
-                          <Form.Control
-                            type="url"
-                            value={formData.googlePlusUrl}
-                            onChange={handleInputChange}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                    <Form.Group>
-                      <Link
-                        className="btn btn-sm btn-primary"
-                        href="javascript:void(0);"
-                      >
-                        Save
-                      </Link>
-                      <Link
-                        className="btn btn-sm btn-danger ml-8"
-                        href="javascript:void(0);"
-                      >
-                        Cancel
-                      </Link>
-                    </Form.Group>
+
+                    <Button variant="primary" type="submit" disabled={loading} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', backgroundColor: '#4caf50', borderColor: '#4caf50' }}>
+                      {loading ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button variant="danger" className="ml-2" onClick={() => window.history.back()} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', backgroundColor: '#e57373', borderColor: '#e57373' }}>
+                      Cancel
+                    </Button>
                   </Form>
                 </Card.Body>
               </Card>
@@ -500,7 +357,7 @@ export default function Add_doctor() {
           </Row>
         </Container>
       </SimpleBar>
-      {/* theme body end */}
+      {/* Theme body end */}
     </div>
   );
 }

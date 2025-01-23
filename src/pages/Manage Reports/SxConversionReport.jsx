@@ -56,20 +56,6 @@ const SxConversionReport = () => {
           </div>
         </div>
       </div>
-      {/* Filtered Data Display */}
-      <div className="filtered-data-container">
-        {filteredData.length > 0 ? (
-          <ul>
-            {filteredData.map((entry, index) => (
-              <li key={index}>
-                {entry.date} - {entry.customer} - {entry.enquiryType}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No data available for the selected date range.</p>
-        )}
-      </div>
     </div>
   );
 };

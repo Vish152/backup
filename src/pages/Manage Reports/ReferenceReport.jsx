@@ -8,7 +8,7 @@ import {
   Form,
   Button,
 } from "react-bootstrap";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import PageBreadcrumb from "../../componets/PageBreadcrumb";
 import SimpleBar from "simplebar-react";
 
 const ReferenceReport = () => {
@@ -128,4 +128,4 @@ const ReferenceReport = () => {
   );
 };
 
-export default RefrenceReport;
+export default ReferenceReport;
