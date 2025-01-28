@@ -16,7 +16,7 @@ import {
 } from "react-bootstrap";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 
-export const BASE_URL = "http://192.168.90.107:5000/api"; // Update your API base URL here
+export const BASE_URL = "http://192.168.90.135:5000/api"; // Update your API base URL here
 
 export default function Call_logs() {
   const [CallLogs, setCallLogs] = useState([]);

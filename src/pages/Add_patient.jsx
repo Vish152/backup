@@ -34,12 +34,12 @@ const hospitalData = {
   },
 };
 
-const BASE_URL = "http://192.168.90.166:5000/api";
+const BASE_URL = "http://192.168.90.135:5000/api";
 
 export default function Add_Patient() {
   const [formData, setFormData] = useState({
     title: "",
-    date: new Date().toISOString().split("T")[0],
+    date:"",
     uid: "",
     patientName: "",
     gender: "",
@@ -154,8 +154,9 @@ export default function Add_Patient() {
           // Reset form after submission
           setFormData({
             title: "",
-            date: new Date().toISOString().split("T")[0],
+            // date: new Date().toISOString().split("T")[0],
             uid: "",
+            date:"",
             patientName: "",
             gender: "",
             mobileNo: "",

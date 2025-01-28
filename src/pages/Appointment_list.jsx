@@ -28,15 +28,17 @@ export default function Appointment_list() {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
   
-  function formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+   function formatDateToDisplay(date) {
+     if (!date) return "";
+     const parsedDate = new Date(date);
+     const day = String(parsedDate.getDate()).padStart(2, "0");
+     const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+     const year = parsedDate.getFullYear();
+     return `${day}/${month}/${year}`;
+   }
 
-  const [fromDate, setFromDate] = useState(formatDate(new Date()));
-  const [toDate, setToDate] = useState(formatDate(new Date()));
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [receipts, setReceipts] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -99,10 +101,24 @@ export default function Appointment_list() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Fetched Data:", data.data);
-        setAppointmentdata(data.data || []);
+         console.log("Fetched Data:", data.data);
+        // Process the data to ensure all required fields are present
+        const processedData = data.data.map((appointment) => ({
+          ...appointment,
+          // Add default values for missing fields
+          type: appointment.type || appointment.patient_type || "N/A",
+          doctor_name:
+            appointment.doctor_name || appointment.doctorName || "N/A",
+          fde_name: appointment.fde_name || appointment.FDE_Name || "N/A",
+          date: formatDateToDisplay(appointment.date),
+        }));
+
+        setAppointmentdata(processedData);
       } else {
-        console.error("Error fetching appointments:", data.message || "Unknown error");
+        console.error(
+          "Error fetching appointments:",
+          data.message || "Unknown error"
+        );
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -281,14 +297,15 @@ const handleConfirmClick = async () => {
   if (disabledButtons.confirm) return;
 
   // Check if `rowData` and `rowData._id` are valid
-  if (!rowData || !rowData._id) {
+  if (!rowData || !rowData.appointment_id) {
     console.error("Invalid rowData or appointment ID:", rowData);
     alert("Invalid appointment data. Please try again.");
     return;
   }
 
-  const appointment_id = rowData._id; // Use _id instead of appointment_id
+  const appointment_id = rowData.appointment_id; // Use _id instead of appointment_id
   console.log("Sending appointment_id:", appointment_id);
+  console.log("Patient ID:", rowData.patient_id); // Ensure patient_id is also valid
 
   try {
     // Confirm the appointment
@@ -307,7 +324,7 @@ const handleConfirmClick = async () => {
         confirmResponse.status,
         confirmResponse.statusText
       );
-      alert("Failed to confirm the appointment. Please try again.");
+      alert("Appointment is already confirmed.");
       return;
     }
 
@@ -321,29 +338,37 @@ const handleConfirmClick = async () => {
       history: false,
     }));
 
-    // Add to patient list
-    const patientResponse = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        appointment_id: rowData._id, // Use _id instead of appointment_id
-        patient_id: rowData.patient_id,
-      }),
+    // Prepare the request body to update the patient list
+    const requestBody = JSON.stringify({
+      appointment_id: rowData.appointment_id, // Correct appointment ID
+      patient_id: rowData.patient_id, // Correct patient ID
+      flag: 1, // Assuming flag should be updated to 1
     });
 
-    if (!patientResponse.ok) {
-      console.error(
-        "Failed to add to patient list:",
-        patientResponse.status,
-        patientResponse.statusText
-      );
-      alert("Failed to update patient list.");
-    } else {
-      console.log("Patient list updated successfully.");
-    }
+    console.log("Request Body being sent to update patient list:", requestBody); // Log request body to ensure it's correct
+
+    // Add to patient list
+    // const patientResponse = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
+    //   method: "PUT",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: requestBody,
+    // });
+
+    // if (!patientResponse.ok) {
+    //   const errorData = await patientResponse.json();
+    //   console.error(
+    //     "Failed to add to patient list:",
+    //     patientResponse.status,
+    //     patientResponse.statusText,
+    //     errorData
+    //   );
+    //   alert("Failed to update patient list.");
+    // } else {
+    //   console.log("Patient list updated successfully.");
+    // }
 
     // Refresh appointment data
-    fetchAppointmentData();
+    //fetchAppointmentData();
   } catch (error) {
     console.error("Error confirming appointment:", error);
     alert(
@@ -351,7 +376,6 @@ const handleConfirmClick = async () => {
     );
   }
 };
-
 
   const handleHistoryClick = async () => {
     if (disabledButtons.history) return;
@@ -376,8 +400,8 @@ const handleConfirmClick = async () => {
         alert("History process completed!");
         setDisabledButtons((prev) => ({
           ...prev,
-          history: true,
-          execution: false,
+          history: true, // Disable history button
+          execution: false, // Enable execution button
         }));
       } else {
         console.error("Failed to handle history:", historyResponse.statusText);
@@ -391,6 +415,7 @@ const handleConfirmClick = async () => {
 
   const handleExecutionClick = async () => {
     if (disabledButtons.execution) return;
+
     try {
       const executionResponse = await fetch(
         `${BASE_URL}/V1/appointment/execution`,
@@ -405,8 +430,8 @@ const handleConfirmClick = async () => {
         alert("Execution process completed!");
         setDisabledButtons((prev) => ({
           ...prev,
-          execution: true,
-          consultation: false,
+          execution: true, // Disable execution button
+          consultation: false, // Enable consultation button
         }));
       }
     } catch (error) {
@@ -416,6 +441,7 @@ const handleConfirmClick = async () => {
 
   const handleConsultationClick = async () => {
     if (disabledButtons.consultation) return;
+
     try {
       const consultationResponse = await fetch(
         `${BASE_URL}/V1/appointment/consultation`,
@@ -430,7 +456,7 @@ const handleConfirmClick = async () => {
         alert("Consultation process completed!");
         setDisabledButtons((prev) => ({
           ...prev,
-          consultation: true,
+          consultation: true, // Disable consultation button
         }));
       }
     } catch (error) {
@@ -810,7 +836,7 @@ const handleConfirmClick = async () => {
                     <Form.Control
                       as="select"
                       name="type"
-                      value={type}
+                      value={formData.type}
                       onChange={(e) => {
                         setType(e.target.value);
                         setFormData((prev) => ({
@@ -1275,15 +1301,16 @@ const handleConfirmClick = async () => {
                       header={header}
                       globalFilterFields={[
                         "appointment_id",
-                        "appointment_timestamp",
+                        "date",
+                        // "appointment_timestamp",
                         "appointmentTime",
                         "confirm_time",
-                        "patient_type",
+                         "patient_type",
                         "patientName",
                         "mobileNo",
-                        "doctorName",
-                        "doctor_id",
-                        "FDE_Name",
+                        "type",
+                        "doctor_name",
+                        "fde_name",
                         "note",
                         // "patient_id",
                         // "appointmentTimestamp",
@@ -1330,9 +1357,14 @@ const handleConfirmClick = async () => {
                         }}
                       />
                       <Column
-                        field="appointment_timestamp"
-                        header="Date"
+                        field="date"
+                        header="date"
                         sortable
+                        // body={(rowData) => {
+                        //   // Format the date if needed
+                        //   const date = new Date(rowData.appointment_date);
+                        //   return date.toLocaleDateString();
+                        // }}
                         style={{
                           border: "1px solid #90caf9",
                           textAlign: "center",
@@ -1390,10 +1422,11 @@ const handleConfirmClick = async () => {
                         }}
                       />
                       <Column
+                        field="doctorName"
                         header="Doctor Details"
-                        body={(rowData) =>
-                          `${rowData.doctorName}`
-                        }
+                        // body={(rowData) =>
+                        //   `${rowData.doctorName}`
+                        // }
                         sortable
                         style={{
                           border: "1px solid #90caf9",
@@ -1403,7 +1436,7 @@ const handleConfirmClick = async () => {
                       />
 
                       <Column
-                        field="fdeName"
+                        field="FDE_Name"
                         header="FDE Name"
                         sortable
                         style={{

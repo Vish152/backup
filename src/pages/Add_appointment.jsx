@@ -1,37 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Form, Container, Card } from "react-bootstrap";
-import {
-  CountryDropdown,
-  StateDropdown,
-  CityDropdown,
-} from "react-country-state-dropdown";
+// import {
+//   CountryDropdown,
+//   StateDropdown,
+//   CityDropdown,
+// } from "react-country-state-dropdown";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 import { Link } from "react-router-dom";
 
 const BASE_URL = "http://192.168.90.135:5000/api"; // Update with your backend API base URL
 
 export default function Add_appointment() {
-  const [country, setCountry] = useState(null);
+  // const [country, setCountry] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [state, setState] = useState(null);
-  const [city, setCity] = useState(null);
+  // const [state, setState] = useState(null);
+  // const [city, setCity] = useState(null);
   const [doctors, setDoctors] = useState("");
   const [fdeList, setFdeList] = useState([]); // FDE list
   const [departmentList, setDepartmentList] = useState([]);
   const [type, setType] = useState("");
+  // const formatDateToDDMMYYYY = (isoDate) => {
+  //   const [year, month, day] = isoDate.split("-");
+  //   return `${day}/${month}/${year}`;
+  // };
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     patientName: "",
     mobileNo: "",
     address: "",
+    patient_type: "",
     appointmentTime: "",
     note: "",
-    fdeId: "",
+    FDE_Name: "",
     departmentName: "",
-    doctorId: "",
-    country: "",
-    state: "",
-    city: "",
+    doctorName: "",
+    // country: "",
+    // state: "",
+    // city: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -50,25 +55,26 @@ export default function Add_appointment() {
     }));
   };
 
-  const handleSetCountry = (value) => setCountry(value);
-  const handleSetState = (value) => setState(value);
-  const handleSetCity = (value) => setCity(value);
+  // const handleSetCountry = (value) => setCountry(value);
+  // const handleSetState = (value) => setState(value);
+  // const handleSetCity = (value) => setCity(value);
 
   const validate = () => {
     const newErrors = {};
     const requiredFields = [
       "date",
       "patientName",
+      "patient_type",
       "mobileNo",
       "address",
       "appointmentTime",
       "note",
-      "fdeId",
+      "FDE_Name",
       "departmentName",
-      "doctorId",
-      "country",
-      "state",
-      "city",
+      "doctorName",
+      // "country",
+      // "state",
+      // "city",
     ];
 
     requiredFields.forEach((field) => {
@@ -84,59 +90,55 @@ export default function Add_appointment() {
 
     return newErrors;
   };
-
 const handleSubmit = async (saveType) => {
   const validationErrors = validate();
   console.log("Form Data:", formData); // Log the form data before submission
   setErrors(validationErrors);
-console.log(validationErrors);
+  console.log(validationErrors);
   if (Object.keys(validationErrors).length === 0) {
-    setLoading(true); 
+    setLoading(true);
+
+    // Format the date properly before submitting
+    const formattedDate = formData.date
+      ? new Date(formData.date).toISOString().split("T")[0]
+      : null;
+
+    const payload = {
+      ...formData,
+      date: formattedDate, // Use the formatted date
+      saveType,
+    };
+
     try {
       console.log("Sending request to backend...");
 
-      const response = await fetch(`${BASE_URL}/V1/appointment/addAppointment`,
+      const response = await fetch(
+        `${BASE_URL}/V1/appointment/addAppointment`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, saveType }),
+          body: JSON.stringify(payload),
         }
       );
 
-      // Log the raw response to debug issues
-      console.log("Response received:", response);
-
-      // Check if the response is OK
+      // Handle the response as before
       if (response.ok) {
         const responseData = await response.json();
-        console.log("Success response from backend:", responseData);
         alert("Appointment added successfully");
-
-        // Reset the form
         setFormData({
-          date: new Date().toISOString().split("T")[0],
+          date: "",
           patientName: "",
           mobileNo: "",
+          patient_type: "",
           address: "",
           appointmentTime: "",
           note: "",
-          fdeId: "",
+          FDE_Name: "",
           departmentName: "",
           doctorName: "",
-          appointmentWith: "",
-          country: "",
-          state: "",
-          city: "",
         });
-
-        // Reset country, state, and city
-        setCountry(null);
-        setState(null);
-        setCity(null);
       } else {
-        // Parse the error response to display meaningful information
         const errorData = await response.json();
-        console.error("Error response from API:", errorData);
         alert(
           `Failed to add appointment. ${
             errorData.message || "Please try again."
@@ -268,12 +270,12 @@ console.log(validationErrors);
                         <Form.Control
                           as="select"
                           name="type"
-                          value={type}
+                          value={formData.patient_type}
                           onChange={(e) => {
                             setType(e.target.value);
                             setFormData((prev) => ({
                               ...prev,
-                              type: e.target.value,
+                              patient_type: e.target.value,
                             }));
                           }}
                         >
@@ -361,8 +363,8 @@ console.log(validationErrors);
                       <Form.Group className="mb-20">
                         <Form.Label>FDE Name</Form.Label>
                         <Form.Select
-                          name="fdeId"
-                          value={formData.fdeId}
+                          name="FDE_Name"
+                          value={formData.FDE_Name}
                           onChange={handleInputChange}
                         >
                           <option value="">Select FDE Name</option>
@@ -408,8 +410,8 @@ console.log(validationErrors);
                   <Form.Group className="mb-20">
                     <Form.Label>Appointment With</Form.Label>
                     <Form.Select
-                      name="doctorId"
-                      value={formData.doctorId}
+                      name="doctorName"
+                      value={formData.doctorName}
                       onChange={handleInputChange}
                     >
                       <option value="">Select a Doctor</option>
@@ -429,7 +431,7 @@ console.log(validationErrors);
                   </Form.Group>
                 </Col>
 
-                    {/* Country Dropdown */}
+                    {/* Country Dropdown
                     <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
                         <Form.Label>Country</Form.Label>
@@ -453,7 +455,7 @@ console.log(validationErrors);
                     </Col>
 
                     {/* State Dropdown */}
-                    <Col md={4} className="mb-4">
+                    {/* <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
                         <Form.Label>State</Form.Label>
                         <StateDropdown
@@ -473,10 +475,10 @@ console.log(validationErrors);
                           }}
                         />
                       </Form.Group>
-                    </Col>
+                    </Col> */}
 
                     {/* City Dropdown */}
-                    <Col md={4} className="mb-4">
+                    {/* <Col md={4} className="mb-4">
                       <Form.Group className="mb-3">
                         <Form.Label>City</Form.Label>
                         <CityDropdown
@@ -497,7 +499,7 @@ console.log(validationErrors);
                           }}
                         />
                       </Form.Group>
-                    </Col>
+                    </Col> */} 
 
                     {/* Note */}
                     <Col md={4} className="mb-4">

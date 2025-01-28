@@ -642,7 +642,7 @@ const handleEditPatient = (patient) => {
                       globalFilterFields={[
                         "uid",
                         "name",
-                        "date",
+                        "formattedDate",
                         "age",
                         "sex",
                         "phone",
@@ -687,15 +687,16 @@ const handleEditPatient = (patient) => {
                         }}
                       />
                       <Column
-                      field="date"
-                      header="Date"
-                      sortable
-                      style={{
-                        border: "1px solid #90caf9",
-                        textAlign: "center",
-                        padding: "0.75rem",
-                      }}
+                        field="formattedDate"
+                        header="Date"
+                        sortable
+                        style={{
+                          border: "1px solid #90caf9",
+                          textAlign: "center",
+                          padding: "0.75rem",
+                        }}
                       />
+
                       <Column
                         field="name"
                         header="Name"
