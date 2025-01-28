@@ -17,11 +17,10 @@ import {
 } from "react-bootstrap";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 
-const BASE_URL = "http://192.168.90.107:5000/api"; // Update your API base URL here
+const BASE_URL = "http://192.168.90.135:5000/api"; // Update your API base URL here
 
 export default function Appointment_list() {
   const [appointment, setAppointmentdata] = useState([]); // Appointment data state
-  const [patientList, setPatientList] = useState([]);
   const [doctors, setDoctors] = useState([]); // Doctors list
   const [fdeList, setFdeList] = useState([]); // FDE list
   const [consultationList, setConsultationList] = useState([]);
@@ -112,29 +111,10 @@ export default function Appointment_list() {
     }
   };
 
-  // const fetchPatientList = async () => {
-  //   try {
-  //     const response = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     });
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setPatientList(data.data || []);
-  //     } else {
-  //       console.error("Failed to fetch patient list:", response.statusText);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching patient list:", error.message);
-  //   }
-  // };
 
   useEffect(() => {
     fetchAppointmentData();
-    // fetchPatientList();
   }, []);
 
   const fetchDropdownData = async () => {
@@ -203,31 +183,6 @@ export default function Appointment_list() {
     fetchDropdownData();
   }, []);
 
-const handleConfirmAppointment = async (appointmentId) => {
-  const isConfirmed = window.confirm(
-    "Are you sure you want to confirm this appointment?"
-  );
-  if (isConfirmed) {
-    try {
-      const response = await fetch(`${BASE_URL}/V1/appointment/confirm`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
-
-      if (response.ok) {
-        alert("Appointment confirmed successfully!");
-        fetchAppointmentData();
-      } else {
-        console.error("Failed to confirm appointment:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error confirming appointment:", error.message);
-    }
-  }
-};
 
 const handleHistory = async (appointmentId) => {
   const isConfirmed = window.confirm(
@@ -316,105 +271,172 @@ const actionBodyTemplate = (rowData) => {
   const [disabledButtons, setDisabledButtons] = useState({
     edit: false,
     delete: false,
-    confirm: false,   // Initially disabled
-    history: true,    // Initially disabled until confirm is clicked
-    execution: true,  // Initially disabled until history is clicked
+    confirm: false, // Initially enabled
+    history: true, // Initially disabled until confirm is clicked
+    execution: true, // Initially disabled until history is clicked
     consultation: true, // Initially disabled until execution is clicked
   });
-  
-  const handleConfirmClick = async (e) => {
-    if (disabledButtons.confirm) {
-      e.preventDefault(); // Prevent any action when the confirm button is clicked
-      return;
-    }
-  
-    // Call the appointment confirmation function
-    await handleConfirmAppointment(rowData.id);
-  
-    // After confirmation, send data to "All Patients"
-    try {
-      // Example API call to update the status or send data to the "All Patients" list
-      const response = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appointmentId: rowData.id,
-          patientId: rowData.patientId,  // Assuming `rowData` contains patient information
-        }),
-      });
-  
-      if (response.ok) {
-        console.log("Patient moved to All Patients");
-      } else {
-        console.error("Failed to move patient to All Patients", response.statusText);
+const handleConfirmClick = async () => {
+  // Prevent action if disabled
+  if (disabledButtons.confirm) return;
+
+  // Check if `rowData` and `rowData._id` are valid
+  if (!rowData || !rowData._id) {
+    console.error("Invalid rowData or appointment ID:", rowData);
+    alert("Invalid appointment data. Please try again.");
+    return;
+  }
+
+  const appointment_id = rowData._id; // Use _id instead of appointment_id
+  console.log("Sending appointment_id:", appointment_id);
+
+  try {
+    // Confirm the appointment
+    const confirmResponse = await fetch(
+      `${BASE_URL}/V1/appointment/confirmAppointment/${appointment_id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       }
-  
-      // Proceed to next stage after confirming
-      setActionStage(2); // Stage moves to 2 after confirmation
-      setDisabledButtons((prevState) => ({
-        ...prevState,
-        edit: true,      // Disable the edit button
-        delete: true,    // Disable the delete button
-        confirm: true,   // Disable the confirm button (no action will be performed)
-        history: false,  // Enable the history button
-      }));
+    );
+
+    if (!confirmResponse.ok) {
+      console.error(
+        "Failed to confirm appointment:",
+        confirmResponse.status,
+        confirmResponse.statusText
+      );
+      alert("Failed to confirm the appointment. Please try again.");
+      return;
+    }
+
+    console.log("Appointment confirmed successfully!");
+    alert("Appointment confirmed!");
+
+    // Update button states
+    setDisabledButtons((prev) => ({
+      ...prev,
+      confirm: true,
+      history: false,
+    }));
+
+    // Add to patient list
+    const patientResponse = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appointment_id: rowData._id, // Use _id instead of appointment_id
+        patient_id: rowData.patient_id,
+      }),
+    });
+
+    if (!patientResponse.ok) {
+      console.error(
+        "Failed to add to patient list:",
+        patientResponse.status,
+        patientResponse.statusText
+      );
+      alert("Failed to update patient list.");
+    } else {
+      console.log("Patient list updated successfully.");
+    }
+
+    // Refresh appointment data
+    fetchAppointmentData();
+  } catch (error) {
+    console.error("Error confirming appointment:", error);
+    alert(
+      "An error occurred while confirming the appointment. Please try again."
+    );
+  }
+};
+
+
+  const handleHistoryClick = async () => {
+    if (disabledButtons.history) return;
+
+    if (!rowData || !rowData.id) {
+      console.error("Invalid rowData or appointment ID for history:", rowData);
+      alert("Invalid appointment data. Please try again.");
+      return;
+    }
+
+    try {
+      const historyResponse = await fetch(
+        `${BASE_URL}/V1/appointment/history`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId: rowData.id }),
+        }
+      );
+
+      if (historyResponse.ok) {
+        alert("History process completed!");
+        setDisabledButtons((prev) => ({
+          ...prev,
+          history: true,
+          execution: false,
+        }));
+      } else {
+        console.error("Failed to handle history:", historyResponse.statusText);
+        alert("Failed to process history. Please try again.");
+      }
     } catch (error) {
-      console.error("Error moving patient to All Patients:", error.message);
+      console.error("Error handling history:", error);
+      alert("An error occurred while processing history. Please try again.");
     }
   };
-  
-  
-  const handleHistoryClick = (e) => {
-    if (disabledButtons.history) {
-      e.preventDefault(); // Prevent any action when the history button is clicked
-      return;
+
+  const handleExecutionClick = async () => {
+    if (disabledButtons.execution) return;
+    try {
+      const executionResponse = await fetch(
+        `${BASE_URL}/V1/appointment/execution`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId: rowData.id }),
+        }
+      );
+
+      if (executionResponse.ok) {
+        alert("Execution process completed!");
+        setDisabledButtons((prev) => ({
+          ...prev,
+          execution: true,
+          consultation: false,
+        }));
+      }
+    } catch (error) {
+      console.error("Error handling execution:", error);
     }
-  
-    handleHistory(rowData.id);
-    setActionStage(3);
-  
-    setDisabledButtons((prevState) => ({
-      ...prevState,
-      history: true,   // Disable the history button
-      confirm: true,   // Disable the confirm button (no action performed when clicked)
-      execution: false, // Enable the execution button
-    }));
   };
-  
-  const handleExecutionClick = (e) => {
-    if (disabledButtons.execution) {
-      e.preventDefault(); // Prevent any action when the execution button is clicked
-      return;
+
+  const handleConsultationClick = async () => {
+    if (disabledButtons.consultation) return;
+    try {
+      const consultationResponse = await fetch(
+        `${BASE_URL}/V1/appointment/consultation`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId: rowData.id }),
+        }
+      );
+
+      if (consultationResponse.ok) {
+        alert("Consultation process completed!");
+        setDisabledButtons((prev) => ({
+          ...prev,
+          consultation: true,
+        }));
+      }
+    } catch (error) {
+      console.error("Error handling consultation:", error);
     }
-  
-    handleExecution(rowData.id);
-    setActionStage(4);
-  
-    setDisabledButtons((prevState) => ({
-      ...prevState,
-      execution: true, // Disable the execution button
-      consultation: false, // Enable the consultation button
-    }));
   };
-  
-  const handleConsultationClick = (e) => {
-    if (disabledButtons.consultation) {
-      e.preventDefault(); // Prevent any action when the consultation button is clicked
-      return;
-    }
-  
-    handleConsultation(rowData.id);
-    setActionStage(5);
-  
-    setDisabledButtons((prevState) => ({
-      ...prevState,
-      consultation: true, // Disable the consultation button
-      execution: true,    // Disable the execution button after consultation
-    }));
-  };
-  
 
   return (
     <div
@@ -440,7 +462,7 @@ const actionBodyTemplate = (rowData) => {
           padding: "0",
           border: "1px solid #ddd",
           margin: "2px",
-          pointerEvents: disabledButtons.edit ? 'none' : 'auto',  // Disable interaction when button is disabled
+          pointerEvents: disabledButtons.edit ? "none" : "auto", // Disable interaction when button is disabled
         }}
         onClick={() => {
           setSelectedAppointment(rowData);
@@ -464,7 +486,7 @@ const actionBodyTemplate = (rowData) => {
           padding: "0",
           border: "1px solid #ddd",
           margin: "2px",
-          pointerEvents: disabledButtons.delete ? 'none' : 'auto',  // Disable interaction when button is disabled
+          pointerEvents: disabledButtons.delete ? "none" : "auto", // Disable interaction when button is disabled
         }}
         onClick={() => {
           setSelectedAppointment(rowData);
@@ -510,7 +532,7 @@ const actionBodyTemplate = (rowData) => {
             padding: "0",
             border: "1px solid #ddd",
             margin: "2px",
-            pointerEvents: disabledButtons.history ? 'none' : 'auto',  // Disable interaction when button is disabled
+            pointerEvents: disabledButtons.history ? "none" : "auto", // Disable interaction when button is disabled
           }}
           onClick={handleHistoryClick}
           disabled={disabledButtons.history}

@@ -17,7 +17,7 @@ import {
 } from "react-bootstrap";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 
-const BASE_URL = "http://192.168.90.147:5000/api"; // Update your API base URL here
+const BASE_URL = "http://192.168.90.135:5000/api"; // Update your API base URL here
 
 export default function All_patient() {
   const [patients, setPatients] = useState([]);
@@ -37,6 +37,25 @@ export default function All_patient() {
   const [showModal, setShowModal] = useState(false); // Modal visibility state
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null); // Selected patient data
+  
+  function dateISO(dateInput) {
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date", dateInput);
+      return null; // or handle it appropriately
+    }
+
+    // Get day, month, and year
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Month is 0-based
+    const year = date.getFullYear();
+
+    // Return in dd/mm/yyyy format
+    return `${day}/${month}/${year}`;
+  }
+
+
+
 
   // Function to format date to yyyy-MM-dd
   const formatToApiDate = (date) => {
@@ -92,45 +111,67 @@ export default function All_patient() {
   }, []);
 
   // Handle opening the modal
-  const handleEditPatient = (patient) => {
-    setSelectedPatient(patient); // Set the patient to edit
-    setShowEditPatientModal(true); // Show the edit patient modal
+
+const handleEditPatient = (patient) => {
+  setSelectedPatient({ ...patient ,    date: dateISO(patient.date),}); // Create a copy to avoid direct state mutation
+  setShowEditPatientModal(true);
+};
+
+ const handleSaveChanges = async () => {
+  if (!selectedPatient) return;
+
+  // Prepare the patient data for update
+  const updatedPatientData = {
+    title: selectedPatient.title || "",
+    date: dateISO(selectedPatient.date),
+    uid: selectedPatient.uid || "",
+    name: selectedPatient.name || "",
+    sex: selectedPatient.sex || "",
+    phone: selectedPatient.phone || "",
+    alternateNo: selectedPatient.alternateNo || "",
+    email: selectedPatient.email || "",
+    status: selectedPatient.status || "",
+    address: selectedPatient.address || "",
+    age: selectedPatient.age || "",
+    blood_group: selectedPatient.blood_group || "",
+    weight: selectedPatient.weight || "",
+    height: selectedPatient.height || "",
+    patientHistory: selectedPatient.patientHistory || "",
   };
 
-  // Handle saving changes
-  const handleSaveChanges = () => {
-    if (selectedPatient) {
-      // Assuming you have a backend API to update the patient
-      fetch(`/api/patients/${selectedPatient.uid}`, {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/V1/patient/${selectedPatient.phone}`, 
+      {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(selectedPatient),
-      })
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-          throw new Error("Failed to update patient.");
-        })
-        .then((updatedPatient) => {
-          // Update the state for "All Patients"
-          const updatedPatients = patients.map((patient) =>
-            patient.uid === updatedPatient.uid ? updatedPatient : patient
-          );
-          setPatients(updatedPatients);
+        body: JSON.stringify(updatedPatientData)
+      }
+    );
 
-          // Close the modal
-          setShowEditPatientModal(false);
-        })
-        .catch((error) => {
-          console.error("Error updating patient:", error);
-          alert("An error occurred while updating the patient.");
-        });
+    const responseData = await response.json();
+
+    if (response.ok) {
+      // Update patients array with the updated patient
+      setPatients(prevPatients => 
+        prevPatients.map((patient) =>
+          patient.phone === selectedPatient.phone ? responseData.data : patient
+        )
+      );
+
+      setShowEditPatientModal(false);
+      setSelectedPatient(null);
+    } else {
+      console.error("Update failed:", responseData.message);
+      alert(responseData.message || "Failed to update patient");
     }
-  };
-
+  } catch (error) {
+    console.error("Error updating patient:", error);
+    alert("Network error. Please try again.");
+  }
+};
   // Status template for the DataTable
   const statusBodyTemplate = (rowData) => (
     <span
@@ -317,7 +358,7 @@ export default function All_patient() {
                 <Form.Group controlId="formPatientDate">
                   <Form.Label>Date</Form.Label>
                   <Form.Control
-                    type="date"
+                    type="text"
                     value={selectedPatient?.date || ""}
                     placeholder="dd-mm-yyyy"
                     onChange={(e) =>
@@ -366,11 +407,11 @@ export default function All_patient() {
                   <Form.Label>Gender</Form.Label>
                   <Form.Control
                     type="text"
-                    value={selectedPatient?.gender || ""}
+                    value={selectedPatient?.sex || ""}
                     onChange={(e) =>
                       setSelectedPatient({
                         ...selectedPatient,
-                        gender: e.target.value,
+                        sex: e.target.value,
                       })
                     }
                   />
@@ -396,12 +437,12 @@ export default function All_patient() {
                   <Form.Label>Alternate No</Form.Label>
                   <Form.Control
                     type="number"
-                    value={selectedPatient?.alternate || ""}
+                    value={selectedPatient?.alternateNo || ""}
                     placeholder="Enter Alternate Number"
                     onChange={(e) =>
                       setSelectedPatient({
                         ...selectedPatient,
-                        alternate: e.target.value,
+                        alternateNo: e.target.value,
                       })
                     }
                   />
@@ -477,12 +518,12 @@ export default function All_patient() {
                   <Form.Label>Blood Group</Form.Label>
                   <Form.Control
                     type="text"
-                    value={selectedPatient?.bloodGroup || ""}
+                    value={selectedPatient?.blood_group || ""}
                     placeholder="Enter Blood Group"
                     onChange={(e) =>
                       setSelectedPatient({
                         ...selectedPatient,
-                        bloodGroup: e.target.value,
+                        blood_group: e.target.value,
                       })
                     }
                   />
@@ -493,12 +534,12 @@ export default function All_patient() {
                   <Form.Label>Patient Weight</Form.Label>
                   <Form.Control
                     type="text"
-                    value={selectedPatient?.patientWeight || ""}
+                    value={selectedPatient?.weight || ""}
                     placeholder="Enter Patient Weight"
                     onChange={(e) =>
                       setSelectedPatient({
                         ...selectedPatient,
-                        patientWeight: e.target.value,
+                        weight: e.target.value,
                       })
                     }
                   />
@@ -509,12 +550,12 @@ export default function All_patient() {
                   <Form.Label>Patient Height</Form.Label>
                   <Form.Control
                     type="number"
-                    value={selectedPatient?.patientHeight || ""}
+                    value={selectedPatient?.height || ""}
                     placeholder="Enter Patient Height"
                     onChange={(e) =>
                       setSelectedPatient({
                         ...selectedPatient,
-                        patientHeight: e.target.value,
+                        height: e.target.value,
                       })
                     }
                   />
@@ -546,7 +587,10 @@ export default function All_patient() {
           </Button>
           <Button
             variant="secondary"
-            onClick={() => setShowEditPatientModal(false)}
+            onClick={() => {
+              setShowEditPatientModal(false);
+              setSelectedPatient(null);
+            }}
           >
             Cancel
           </Button>
@@ -598,9 +642,9 @@ export default function All_patient() {
                       globalFilterFields={[
                         "uid",
                         "name",
-                        // "date",
+                        "date",
                         "age",
-                        "gender",
+                        "sex",
                         "phone",
                         "email",
                         "status",
@@ -642,7 +686,7 @@ export default function All_patient() {
                           padding: "0.75rem",
                         }}
                       />
-                      {/* <Column
+                      <Column
                       field="date"
                       header="Date"
                       sortable
@@ -651,7 +695,7 @@ export default function All_patient() {
                         textAlign: "center",
                         padding: "0.75rem",
                       }}
-                      /> */}
+                      />
                       <Column
                         field="name"
                         header="Name"
@@ -673,7 +717,7 @@ export default function All_patient() {
                         }}
                       />
                       <Column
-                        field="gender"
+                        field="sex"
                         header="Gender"
                         sortable
                         style={{

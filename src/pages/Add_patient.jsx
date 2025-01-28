@@ -34,7 +34,7 @@ const hospitalData = {
   },
 };
 
-const BASE_URL = "http://192.168.90.147:5000/api";
+const BASE_URL = "http://192.168.90.166:5000/api";
 
 export default function Add_Patient() {
   const [formData, setFormData] = useState({
@@ -47,9 +47,10 @@ export default function Add_Patient() {
     alternateNo: "",
     address: "",
     age: "",
-    bloodGroup: "",
+    blood_group: "",
     maritalStatus: "",
     weight: "",
+    email: "",
     height: "",
     country: "",
     state: "",
@@ -83,7 +84,7 @@ export default function Add_Patient() {
       "mobileNo",
       "address",
       "age",
-      "bloodGroup",
+      "blood_group",
       "maritalStatus",
       "weight",
       "height",
@@ -162,7 +163,7 @@ export default function Add_Patient() {
             email: "",
             address: "",
             age: "",
-            bloodGroup: "",
+            blood_group: "",
             maritalStatus: "",
             weight: "",
             height: "",
@@ -414,8 +415,8 @@ export default function Add_Patient() {
                         <Form.Label>Blood Group</Form.Label>
                         <Form.Control
                           as="select"
-                          name="bloodGroup"
-                          value={formData.bloodGroup}
+                          name="blood_group"
+                          value={formData.blood_group}
                           onChange={handleInputChange}
                         >
                           <option value="">Select Blood Group</option>

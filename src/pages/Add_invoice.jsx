@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 import { Row, Col, Form, Container, Card } from "react-bootstrap";
 
-const BASE_URL = "http://192.168.90.142:5000/api";
+const BASE_URL = "http://192.168.90.166:5000/api";
 
 const AddInvoice = () => {
 const initialFormData = {
