@@ -11,9 +11,9 @@ import {
   Button,
   Spinner,
 } from "react-bootstrap";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import NavBarR from "../componets/NavbarR";
 
-const BASE_URL = "http://192.168.90.166:5000/api";
+const BASE_URL = "http://192.168.90.109:5000/api";
 
 export default function EnquiryList() {
   const [enquiries, setEnquiries] = useState([]);
@@ -176,7 +176,7 @@ export default function EnquiryList() {
         padding: "20px",
       }}
     >
-      <PageBreadcrumb pagename="Enquiry List" />
+      <NavBarR pagename="Enquiry List" />
       <div className="theme-body">
         <Container fluid>
           <Row>

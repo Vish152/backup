@@ -8,6 +8,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+
 import Index from "./pages/Index";
 import Dashboard2 from "./pages/Dashboard2";
 import Dashboard3 from "./pages/Dashboard3";
@@ -156,6 +157,7 @@ function AppContent() {
         sidebarEnabled && <Sidebar />}
 
       <Routes>
+
         <Route exact path="/" element={<Index />} />
         <Route exact path="/doctor-dashboard" element={<Dashboard2 />} />
         <Route exact path="/patient-dashboard" element={<Dashboard3 />} />
@@ -169,7 +171,7 @@ function AppContent() {
         <Route exact path="/add-patient" element={<Add_patient />} />
         <Route exact path="/edit-patient" element={<Edit_patient />} />
 
-        <Route exact path="/call-logs" element={<Call_logs />} /> 
+        <Route exact path="/call-logs" element={<Call_logs />} />
 
         <Route exact path="/add-appointment" element={<Add_appointment />} />
         <Route exact path="/edit-appointment" element={<Edit_appointment />} />
@@ -177,7 +179,7 @@ function AppContent() {
         <Route exact path="/add-enquiry" element={<Add_Enquiry />} />
         <Route exact path="/enquiry-list" element={<Enquiry_list />} />
 
-        <Route exact path="/add-invoice" element={<Add_invoice />}/>
+        <Route exact path="/add-invoice" element={<Add_invoice />} />
         <Route exact path="/invoice-list" element={<Invoice_list />} />
 
         <Route exact path="/all-hospitals" element={<All_Hospitals />} />
@@ -214,12 +216,13 @@ function AppContent() {
         <Route exact path="/add-payment" element={<Add_payment />} />
         <Route exact path="/patient-invoice" element={<Invoice />} />
         <Route exact path="/event-management" element={<Event_management />} />
-        
+
         <Route exact path="/dailyOPDReport" element={<DailyOPDReport />} />
         <Route exact path="/birthdayAlert" element={<BirthdayAlert />} />
 
         <Route exact path="/billingReport" element={<BillingReport />} />
-        <Route exact
+        <Route
+          exact
           path="/enquiryConversation"
           element={<EnquiryConversation />}
         />

@@ -5,10 +5,10 @@ import { Row, Col, Form, Container, Card } from "react-bootstrap";
 //   StateDropdown,
 //   CityDropdown,
 // } from "react-country-state-dropdown";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import NavBarR from "../componets/NavbarR";
 import { Link } from "react-router-dom";
 
-const BASE_URL = "http://192.168.90.135:5000/api"; // Update with your backend API base URL
+const BASE_URL = "http://192.168.90.115:5000/api"; // Update with your backend API base URL
 
 export default function Add_appointment() {
   // const [country, setCountry] = useState(null);
@@ -235,7 +235,7 @@ const handleSubmit = async (saveType) => {
         fontFamily: "'Poppins', Arial, sans-serif",
       }}
     >
-      <PageBreadcrumb pagename="Add Appointment" />
+      <NavBarR pagename="Add Appointment" />
       <Container fluid>
         <Row>
           <Col>

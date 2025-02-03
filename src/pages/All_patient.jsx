@@ -17,7 +17,7 @@ import {
 } from "react-bootstrap";
 import PageBreadcrumb from "../componets/PageBreadcrumb";
 
-const BASE_URL = "http://192.168.90.135:5000/api"; // Update your API base URL here
+const BASE_URL = "http://192.168.0.119:5000/api"; // Update your API base URL here
 
 export default function All_patient() {
   const [patients, setPatients] = useState([]);

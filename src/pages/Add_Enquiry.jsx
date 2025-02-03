@@ -8,7 +8,7 @@ import {
   Button,
   Spinner,
 } from "react-bootstrap";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import NavBarR from "../componets/NavbarR";
 
 const BASE_URL = "http://192.168.90.166:5000/api";
 
@@ -151,7 +151,7 @@ const Add_Enquiry = () => {
         fontFamily: "'Poppins', Arial, sans-serif",
       }}
     >
-      <PageBreadcrumb pagename="Add Enquiry" />
+      <NavBarR pagename="Add Enquiry" />
 
       <div className="theme-body">
         <Container fluid>

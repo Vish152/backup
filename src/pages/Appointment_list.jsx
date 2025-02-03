@@ -15,11 +15,12 @@ import {
   Spinner,
   Modal,
 } from "react-bootstrap";
-import PageBreadcrumb from "../componets/PageBreadcrumb";
+import NavBarR from "../componets/NavbarR";
 
-const BASE_URL = "http://192.168.90.135:5000/api"; // Update your API base URL here
+const BASE_URL = "http://192.168.90.115:5000/api"; // Update your API base URL here
 
 export default function Appointment_list() {
+   const [appointments, setAppointments] = useState([]);
   const [appointment, setAppointmentdata] = useState([]); // Appointment data state
   const [doctors, setDoctors] = useState([]); // Doctors list
   const [fdeList, setFdeList] = useState([]); // FDE list
@@ -28,14 +29,14 @@ export default function Appointment_list() {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
   
-   function formatDateToDisplay(date) {
-     if (!date) return "";
-     const parsedDate = new Date(date);
-     const day = String(parsedDate.getDate()).padStart(2, "0");
-     const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
-     const year = parsedDate.getFullYear();
-     return `${day}/${month}/${year}`;
-   }
+  //  function formatDateToDisplay(date) {
+  //    if (!date) return "";
+  //    const parsedDate = new Date(date);
+  //    const day = String(parsedDate.getDate()).padStart(2, "0");
+  //    const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+  //    const year = parsedDate.getFullYear();
+  //    return `${day}/${month}/${year}`;
+  //  }
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -48,7 +49,7 @@ export default function Appointment_list() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [type, setType] = useState("");
-  const [showActionButtons, setShowActionButtons] = useState(true);
+  // const [showActionButtons, setShowActionButtons] = useState(true);
 
   const typeList = ["NEW", "FOLLOW", "POSTOPERATIVE"];
 
@@ -70,63 +71,59 @@ export default function Appointment_list() {
     });
   };
 
-  const formatToApiDate = (appointment_timestamp) => {
-    if (!appointment_timestamp) return "";
-    const [day, month, year] = appointment_timestamp.split("-");
-    return `${year}-${month}-${day}`;
-  };
+  // const formatToApiDate = (appointment_timestamp) => {
+  //   if (!appointment_timestamp) return "";
+  //   const [day, month, year] = appointment_timestamp.split("-");
+  //   return `${year}-${month}-${day}`;
+  // };
 
-  const fetchAppointmentData = async () => {
-    setLoading(true);
-    try {
-      const url = new URL(`${BASE_URL}/V1/appointment/listAppointments`);
-      const params = {
-        from: formatToApiDate(fromDate),
-        to: formatToApiDate(toDate),
-      };
+const fetchAppointmentData = async (withFilters = false) => {
+  setLoading(true);
+  try {
+    const url = new URL(`${BASE_URL}/V1/appointment/listAppointments`);
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
 
-      Object.keys(params).forEach((key) => {
-        if (params[key]) url.searchParams.append(key, params[key]);
-      });
+    // Ensure fromDate and toDate are always defined
+    let finalFromDate = fromDate || today;
+    let finalToDate = toDate || today;
 
-      console.log("Request URL:", url.toString());
+    console.log(" Final From Date:", finalFromDate);
+    console.log(" Final To Date:", finalToDate);
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    const params = {
+      from: finalFromDate.split("-").reverse().join("/"), // Convert YYYY-MM-DD → DD/MM/YYYY
+      to: finalToDate.split("-").reverse().join("/"),
+    };
 
-      const data = await response.json();
+    Object.keys(params).forEach((key) =>
+      url.searchParams.append(key, params[key])
+    );
 
-      if (response.ok) {
-         console.log("Fetched Data:", data.data);
-        // Process the data to ensure all required fields are present
-        const processedData = data.data.map((appointment) => ({
-          ...appointment,
-          // Add default values for missing fields
-          type: appointment.type || appointment.patient_type || "N/A",
-          doctor_name:
-            appointment.doctor_name || appointment.doctorName || "N/A",
-          fde_name: appointment.fde_name || appointment.FDE_Name || "N/A",
-          date: formatDateToDisplay(appointment.date),
-        }));
+    console.log(" Request URL:", url.toString());
 
-        setAppointmentdata(processedData);
-      } else {
-        console.error(
-          "Error fetching appointments:",
-          data.message || "Unknown error"
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-    } finally {
-      setLoading(false);
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log(" Fetched Data:", data.data);
+      setAppointmentdata(data.data);
+    } else {
+      console.error(
+        " Error fetching appointments:",
+        data.message || "Unknown error"
+      );
     }
-  };
-
+  } catch (error) {
+    console.error(" Error fetching appointments:", error);
+     alert("Error fetching appointments: " + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   useEffect(() => {
@@ -200,90 +197,8 @@ export default function Appointment_list() {
   }, []);
 
 
-const handleHistory = async (appointmentId) => {
-  const isConfirmed = window.confirm(
-    "Complete the Patient History Process..."
-  );
-  if (isConfirmed) {
-    try {
-      const response = await fetch(`${BASE_URL}/V1/appointment/history`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
-
-      if (response.ok) {
-        alert("History successfully!");
-        fetchAppointmentData();
-      } else {
-        console.error("Failed to fetch history:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching history:", error.message);
-    }
-  }
-};
-
-const handleExecution = async (appointmentId) => {
-  const isConfirmed = window.confirm(
-    "Complete the Patient Executive Process..."
-  );
-  if (isConfirmed) {
-    try {
-      const response = await fetch(`${BASE_URL}/V1/appointment/execution`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
-
-      if (response.ok) {
-        alert("Execution successfully!");
-        fetchAppointmentData();
-      } else {
-        console.error("Failed execution:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error execution:", error.message);
-    }
-  }
-};
-
-const handleConsultation = async (appointmentId) => {
-  const isConfirmed = window.confirm(
-    "Complete the Patient Consultation Process..."
-  );
-  if (isConfirmed) {
-    try {
-      const response = await fetch(
-        `${BASE_URL}/V1/appointment/consultation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ appointmentId }),
-        }
-      );
-
-      if (response.ok) {
-        alert("Consultation successfully!");
-        fetchAppointmentData();
-      } else {
-        console.error("Failed Consultation:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error Consultation:", error.message);
-    }
-  }
-};
-
 const actionBodyTemplate = (rowData) => {
   const [actionStage, setActionStage] = useState(1); // Start from Stage 1
-
   const [disabledButtons, setDisabledButtons] = useState({
     edit: false,
     delete: false,
@@ -291,176 +206,244 @@ const actionBodyTemplate = (rowData) => {
     history: true, // Initially disabled until confirm is clicked
     execution: true, // Initially disabled until history is clicked
     consultation: true, // Initially disabled until execution is clicked
+    receipt: true, // Initially disabled until consultation is clicked
   });
-const handleConfirmClick = async () => {
-  // Prevent action if disabled
-  if (disabledButtons.confirm) return;
 
-  // Check if `rowData` and `rowData._id` are valid
-  if (!rowData || !rowData.appointment_id) {
-    console.error("Invalid rowData or appointment ID:", rowData);
-    alert("Invalid appointment data. Please try again.");
-    return;
-  }
+  const [rowColors, setRowColors] = useState({}); // State for row colors
 
-  const appointment_id = rowData.appointment_id; // Use _id instead of appointment_id
-  console.log("Sending appointment_id:", appointment_id);
-  console.log("Patient ID:", rowData.patient_id); // Ensure patient_id is also valid
+  // useEffect(() => {
+  //   const fetchAppointmentData = async () => {
+  //     if (!rowData || !rowData.appointment_id) return;
 
-  try {
-    // Confirm the appointment
-    const confirmResponse = await fetch(
-      `${BASE_URL}/V1/appointment/confirmAppointment/${appointment_id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      }
-    );
+  //     const appointment_id = rowData.appointment_id;
 
-    if (!confirmResponse.ok) {
-      console.error(
-        "Failed to confirm appointment:",
-        confirmResponse.status,
-        confirmResponse.statusText
-      );
-      alert("Appointment is already confirmed.");
-      return;
-    }
+  //     try {
+  //       const response = await fetch(
+  //         `${BASE_URL}/V1/appointment/listAppointments/${appointment_id}`
+  //       );
+  //       const data = await response.json();
 
-    console.log("Appointment confirmed successfully!");
-    alert("Appointment confirmed!");
+  //       if (data) {
+  //         switch (data.status) {
+  //           case "confirmed":
+  //             setActionStage(2);
+  //             setDisabledButtons((prev) => ({
+  //               ...prev,
+  //               edit: true,
+  //               delete: true,
+  //               confirm: true,
+  //               history: false,
+  //             }));
+  //             break;
+  //           case "history":
+  //             setActionStage(3);
+  //             setDisabledButtons((prev) => ({
+  //               ...prev,
+  //               history: true,
+  //               execution: false,
+  //             }));
+  //             break;
+  //           case "execution":
+  //             setActionStage(4);
+  //             setDisabledButtons((prev) => ({
+  //               ...prev,
+  //               execution: true,
+  //               consultation: false,
+  //             }));
+  //             break;
+  //           case "consultation":
+  //             setActionStage(5);
+  //             setDisabledButtons((prev) => ({
+  //               ...prev,
+  //               consultation: true,
+  //               receipt: false,
+  //             }));
+  //             break;
+  //           default:
+  //             break;
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching appointment details:", error);
+  //     }
+  //   };
 
-    // Update button states
-    setDisabledButtons((prev) => ({
-      ...prev,
-      confirm: true,
-      history: false,
-    }));
+  //   fetchAppointmentData();
+  // }, [rowData]);
 
-    // Prepare the request body to update the patient list
-    const requestBody = JSON.stringify({
-      appointment_id: rowData.appointment_id, // Correct appointment ID
-      patient_id: rowData.patient_id, // Correct patient ID
-      flag: 1, // Assuming flag should be updated to 1
-    });
-
-    console.log("Request Body being sent to update patient list:", requestBody); // Log request body to ensure it's correct
-
-    // Add to patient list
-    // const patientResponse = await fetch(`${BASE_URL}/V1/patient/listPatient`, {
-    //   method: "PUT",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: requestBody,
-    // });
-
-    // if (!patientResponse.ok) {
-    //   const errorData = await patientResponse.json();
-    //   console.error(
-    //     "Failed to add to patient list:",
-    //     patientResponse.status,
-    //     patientResponse.statusText,
-    //     errorData
-    //   );
-    //   alert("Failed to update patient list.");
-    // } else {
-    //   console.log("Patient list updated successfully.");
-    // }
-
-    // Refresh appointment data
-    //fetchAppointmentData();
-  } catch (error) {
-    console.error("Error confirming appointment:", error);
-    alert(
-      "An error occurred while confirming the appointment. Please try again."
-    );
-  }
-};
-
-  const handleHistoryClick = async () => {
-    if (disabledButtons.history) return;
-
-    if (!rowData || !rowData.id) {
-      console.error("Invalid rowData or appointment ID for history:", rowData);
+  const handleConfirmClick = async (appointment_id) => {
+    
+    if (!rowData?.appointment_id) {
+      console.error("Invalid rowData or appointment ID:", rowData);
       alert("Invalid appointment data. Please try again.");
       return;
     }
 
+    if (rowData.status === "confirmed") {
+      alert("This appointment is already confirmed.");
+   
+      return;
+    }
+
+    try {
+      const confirmResponse = await fetch(
+        `${BASE_URL}/V1/appointment/confirmAppointment/${appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const confirmData = await confirmResponse.json();
+
+      if (confirmResponse.ok) {
+        alert("Appointment confirmed!");
+      fetchAppointmentData();
+        setActionStage(2); // Show the History button
+      } else {
+        alert(
+          `Failed to confirm the appointment. Error: ${confirmData.message}`
+        );
+      }
+    } catch (error) {
+      alert(
+        "An error occurred while confirming the appointment. Please try again."
+      );
+    }
+  };
+
+  const handleHistoryClick = async () => {
+    
+    const appointment_id = rowData.appointment_id;
+
     try {
       const historyResponse = await fetch(
-        `${BASE_URL}/V1/appointment/history`,
+        `${BASE_URL}/V1/appointment/updateHistoryChk/${appointment_id}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointmentId: rowData.id }),
         }
       );
 
       if (historyResponse.ok) {
-        alert("History process completed!");
-        setDisabledButtons((prev) => ({
-          ...prev,
-          history: true, // Disable history button
-          execution: false, // Enable execution button
+        const data = await historyResponse.json();
+        setRowColors((prevColors) => ({
+          ...prevColors,
+          [appointment_id]: "orange",
         }));
+        alert("History process completed!");
+        fetchAppointmentData();
+        setActionStage(3);
+       
       } else {
-        console.error("Failed to handle history:", historyResponse.statusText);
-        alert("Failed to process history. Please try again.");
+        alert(
+          `Failed to process history. Error: ${historyResponse.statusText}`
+        );
       }
     } catch (error) {
-      console.error("Error handling history:", error);
       alert("An error occurred while processing history. Please try again.");
     }
   };
 
   const handleExecutionClick = async () => {
-    if (disabledButtons.execution) return;
+  
+    const appointment_id = rowData.appointment_id;
 
     try {
-      const executionResponse = await fetch(
-        `${BASE_URL}/V1/appointment/execution`,
+      const executiveResponse = await fetch(
+        `${BASE_URL}/V1/appointment/updateExecutionChk/${appointment_id}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointmentId: rowData.id }),
         }
       );
 
-      if (executionResponse.ok) {
-        alert("Execution process completed!");
-        setDisabledButtons((prev) => ({
-          ...prev,
-          execution: true, // Disable execution button
-          consultation: false, // Enable consultation button
+      if (executiveResponse.ok) {
+        const data = await executiveResponse.json();
+        setRowColors((prevColors) => ({
+          ...prevColors,
+          [appointment_id]: "yellow",
         }));
+        alert("Execution process completed!");
+        fetchAppointmentData();
+        setActionStage(4);
+        
+      } else {
+        alert(
+          `Failed to process execution. Error: ${executiveResponse.statusText}`
+        );
       }
     } catch (error) {
-      console.error("Error handling execution:", error);
+      alert("An error occurred while processing execution. Please try again.");
     }
   };
 
   const handleConsultationClick = async () => {
-    if (disabledButtons.consultation) return;
+    
+    const appointment_id = rowData.appointment_id;
 
     try {
       const consultationResponse = await fetch(
-        `${BASE_URL}/V1/appointment/consultation`,
+        `${BASE_URL}/V1/appointment/updateConsultationChk/${appointment_id}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointmentId: rowData.id }),
         }
       );
 
       if (consultationResponse.ok) {
-        alert("Consultation process completed!");
-        setDisabledButtons((prev) => ({
-          ...prev,
-          consultation: true, // Disable consultation button
+        const data = await consultationResponse.json();
+        setRowColors((prevColors) => ({
+          ...prevColors,
+          [appointment_id]: "purple",
         }));
+        alert("Consultation process completed!");
+        fetchAppointmentData();
+        setActionStage(5);
+       
+      } else {
+        alert(
+          `Failed to process consultation. Error: ${consultationResponse.statusText}`
+        );
       }
     } catch (error) {
-      console.error("Error handling consultation:", error);
+      alert(
+        "An error occurred while processing consultation. Please try again."
+      );
+    }
+  };
+
+  const handleReceiptsClick = async () => {
+   
+    const appointment_id = rowData.appointment_id;
+
+    try {
+      const receiptsResponse = await fetch(
+        `${BASE_URL}/V1/appointment/updateExecutionChkToFour/${appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ executivechk: 4 }),
+        }
+      );
+
+      if (receiptsResponse.ok) {
+        const data = await receiptsResponse.json();
+        setRowColors((prevColors) => ({
+          ...prevColors,
+          [appointment_id]: "green",
+        }));
+        alert("Receipts process completed and execution status updated to 4!");
+        
+        setActionStage(6);
+       
+      } else {
+        alert(
+          `Failed to process receipts. Error: ${receiptsResponse.statusText}`
+        );
+      }
+    } catch (error) {
+      alert("An error occurred while processing receipts. Please try again.");
     }
   };
 
@@ -471,11 +454,12 @@ const handleConfirmClick = async () => {
         margin: "5px",
         display: "flex",
         gap: "5px",
-        border: "1px solid #ccc", // Border around the box
-        padding: "10px", // Padding inside the box
-        borderRadius: "8px", // Rounded corners
+        border: "1px solid #ccc",
+        padding: "10px",
+        borderRadius: "8px",
       }}
     >
+      {/* Buttons */}
       <Link
         title="Edit"
         style={{
@@ -488,13 +472,10 @@ const handleConfirmClick = async () => {
           padding: "0",
           border: "1px solid #ddd",
           margin: "2px",
-          pointerEvents: disabledButtons.edit ? "none" : "auto", // Disable interaction when button is disabled
+          pointerEvents: rowData.ConfirmPatient === 1 ? "none" : "auto",
         }}
-        onClick={() => {
-          setSelectedAppointment(rowData);
-          setShowEditModal(true);
-        }}
-        disabled={disabledButtons.edit}
+        onClick={() => setSelectedAppointment(rowData)}
+        disabled={rowData.ConfirmPatient === 1}
       >
         <FeatherIcon icon="edit" className="w-18" />
       </Link>
@@ -512,13 +493,10 @@ const handleConfirmClick = async () => {
           padding: "0",
           border: "1px solid #ddd",
           margin: "2px",
-          pointerEvents: disabledButtons.delete ? "none" : "auto", // Disable interaction when button is disabled
+          pointerEvents: rowData.ConfirmPatient === 1 ? "none" : "auto",
         }}
-        onClick={() => {
-          setSelectedAppointment(rowData);
-          setShowDeleteModal(true);
-        }}
-        disabled={disabledButtons.delete}
+        onClick={() => setShowDeleteModal(true)}
+        disabled={rowData.ConfirmPatient === 1}
       >
         <FeatherIcon icon="trash-2" className="w-18" />
       </Link>
@@ -536,110 +514,138 @@ const handleConfirmClick = async () => {
           padding: "0",
           border: "1px solid #ddd",
           margin: "2px",
+          pointerEvents: rowData.ConfirmPatient === 1 ? "none" : "auto",
         }}
-        onClick={handleConfirmClick}
-        disabled={disabledButtons.confirm}
+        onClick={() => handleConfirmClick(rowData.appointment_id)}
+        disabled={rowData.ConfirmPatient === 1}
       >
         <FeatherIcon icon="check" className="w-18" />
       </Link>
 
-      {/* Show History button only after confirming the appointment */}
-      {actionStage >= 2 && (
-        <Link
-          className="history"
-          title="History"
-          style={{
-            width: "35px",
-            height: "35px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: "50%",
-            padding: "0",
-            border: "1px solid #ddd",
-            margin: "2px",
-            pointerEvents: disabledButtons.history ? "none" : "auto", // Disable interaction when button is disabled
-          }}
-          onClick={handleHistoryClick}
-          disabled={disabledButtons.history}
-        >
-          <FeatherIcon icon="clock" className="w-18" />
-        </Link>
-      )}
+      <Link
+        className="history"
+        title="History"
+        style={{
+          width: "35px",
+          height: "35px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: "50%",
+          padding: "0",
+          border: "1px solid #ddd",
+          margin: "2px",
+          pointerEvents:
+            rowData.ConfirmPatient === 1 && rowData.historychk === 3
+              ? "none"
+              : "auto", // Disable interaction when button is disabled
+        }}
+        onClick={handleHistoryClick}
+        disabled={rowData.ConfirmPatient === 1 && rowData.historychk === 3}
+      >
+        <FeatherIcon icon="clock" className="w-18" />
+      </Link>
 
-      {/* Show Execution button only after clicking on History */}
-      {actionStage >= 3 && (
-        <Link
-          className="appointment"
-          title="Execution"
-          style={{
-            width: "35px",
-            height: "35px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: "50%",
-            padding: "0",
-            border: "1px solid #ddd",
-            margin: "2px",
-          }}
-          onClick={handleExecutionClick}
-          disabled={disabledButtons.execution}
-        >
-          <FeatherIcon icon="list" className="w-18" />
-        </Link>
-      )}
+      <Link
+        className="appointment"
+        title="Execution"
+        style={{
+          width: "35px",
+          height: "35px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: "50%",
+          padding: "0",
+          border: "1px solid #ddd",
+          margin: "2px",
+          pointerEvents:
+            rowData.ConfirmPatient === 1 &&
+            rowData.historychk === 3 &&
+            (rowData.executivechk === 1 || rowData.executivechk === 4)
+              ? "none"
+              : "auto",
+        }}
+        onClick={handleExecutionClick}
+        disabled={
+          rowData.ConfirmPatient === 1 &&
+          rowData.historychk === 3 &&
+          (rowData.executivechk === 1 || rowData.executivechk === 4)
+        }
+      >
+        <FeatherIcon icon="list" className="w-18" />
+      </Link>
 
-      {/* Show Consultation button only after clicking on Execution */}
-      {actionStage >= 4 && (
-        <Link
-          className="consultation"
-          title="Consultation"
-          style={{
-            width: "35px",
-            height: "35px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: "50%",
-            padding: "0",
-            border: "1px solid #ddd",
-            margin: "2px",
-          }}
-          onClick={handleConsultationClick}
-          disabled={disabledButtons.consultation}
-        >
-          <FeatherIcon icon="user-check" className="w-18" />
-        </Link>
-      )}
+      <Link
+        className="consultation"
+        title="Consultation"
+        style={{
+          width: "35px",
+          height: "35px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: "50%",
+          padding: "0",
+          border: "1px solid #ddd",
+          margin: "2px",
+          pointerEvents:
+            rowData.ConfirmPatient === 1 &&
+            rowData.historychk === 3 &&
+            (rowData.executivechk === 1 || rowData.executivechk === 4) &&
+            rowData.consultationchk === 2
+              ? "none"
+              : "auto",
+        }}
+        onClick={handleConsultationClick}
+        disabled={
+          rowData.ConfirmPatient === 1 &&
+          rowData.historychk === 3 &&
+          (rowData.executivechk === 1 || rowData.executivechk === 4) &&
+          rowData.consultationchk === 2
+        }
+      >
+        <FeatherIcon icon="user-check" className="w-18" />
+      </Link>
 
-      {/* Receipt button is never disabled */}
-      {actionStage >= 5 && (
-        <Link
-          title="Receipts"
-          style={{
-            width: "35px",
-            height: "35px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: "50%",
-            padding: "0",
-            border: "1px solid #ddd",
-            margin: "2px",
-          }}
-          onClick={() => {
-            setSelectedAppointment(rowData);
-            setShowReceiptModal(true);
-          }}
-        >
-          <FeatherIcon icon="file-text" className="w-18" />
-        </Link>
-      )}
+      <Link
+        className="receipts"
+        title="Receipts"
+        style={{
+          width: "35px",
+          height: "35px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: "50%",
+          padding: "0",
+          border: "1px solid #ddd",
+          margin: "2px",
+          pointerEvents:
+            rowData.ConfirmPatient !== 1 &&
+            rowData.historychk !== 3 &&
+            rowData.executivechk !== 4 &&
+            rowData.consultationchk !== 2
+              ? "none"
+              : "auto",
+        }}
+        disabled={
+          rowData.ConfirmPatient !== 1 &&
+          rowData.historychk !== 3 &&
+          rowData.executivechk !== 4 &&
+          rowData.consultationchk !== 2
+        }
+        onClick={() => {
+          setSelectedAppointment(rowData);
+          setShowReceiptModal(true);
+          handleReceiptsClick();
+        }}
+      >
+        <FeatherIcon icon="file-text" className="w-18" />
+      </Link>
     </div>
   );
 };
-  
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -709,7 +715,10 @@ const handleConfirmClick = async () => {
           <Form.Control
             type="date"
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            onChange={(e) => {
+              setFromDate(e.target.value);
+              console.log("From Date Selected:", e.target.value);
+            }}
             style={{ borderRadius: "8px" }}
           />
         </Form.Group>
@@ -718,13 +727,17 @@ const handleConfirmClick = async () => {
           <Form.Control
             type="date"
             value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+            onChange={(e) => {
+              setToDate(e.target.value);
+              console.log("To Date Selected:", e.target.value);
+            }}
             style={{ borderRadius: "8px" }}
           />
         </Form.Group>
+
         <Button
           variant="primary"
-          onClick={fetchAppointmentData}
+          onClick={() => fetchAppointmentData(true)}
           style={{ borderRadius: "8px" }}
         >
           Refresh Data
@@ -1250,7 +1263,7 @@ const handleConfirmClick = async () => {
       </Modal>
 
       {/* Breadcrumb */}
-      <PageBreadcrumb pagename="Appointment List" />
+      <NavBarR pagename="Appointment List" />
       {/* Theme body */}
       <div
         className="theme-body"
@@ -1277,21 +1290,27 @@ const handleConfirmClick = async () => {
                 }}
               >
                 <Card.Body>
-                  {loading ? ( // Show loader if data is being fetched
+                  {loading ? (
                     <div
-                      className="d-flex justify-content-center py-5"
                       style={{
-                        margin: "0 -100px", // Expand the inner box by reducing left and right margins
-                        padding: "20px", // Add padding for spacing
-                        background: "white",
-                        borderRadius: "10px", // Smooth corners for inner box
-                        border: "1px solid #4dd0e1", // Inner box border styling
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100vh",
                       }}
                     >
-                      <Spinner animation="border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </Spinner>
+                      <div
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                          border: "6px solid #f3f3f3",
+                          borderRadius: "50%",
+                          borderTop: "6px solid #3498db",
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
                     </div>
+                    
                   ) : (
                     <DataTable
                       value={appointment}
@@ -1305,7 +1324,7 @@ const handleConfirmClick = async () => {
                         // "appointment_timestamp",
                         "appointmentTime",
                         "confirm_time",
-                         "patient_type",
+                        "patient_type",
                         "patientName",
                         "mobileNo",
                         "type",
@@ -1357,20 +1376,16 @@ const handleConfirmClick = async () => {
                         }}
                       />
                       <Column
-                        field="date"
-                        header="date"
+                        field="date" // Directly use the formatted date from the backend
+                        header="Date"
                         sortable
-                        // body={(rowData) => {
-                        //   // Format the date if needed
-                        //   const date = new Date(rowData.appointment_date);
-                        //   return date.toLocaleDateString();
-                        // }}
                         style={{
                           border: "1px solid #90caf9",
                           textAlign: "center",
                           padding: "0.5rem",
                         }}
                       />
+
                       <Column
                         field="appointmentTime"
                         header="Appo.Time"

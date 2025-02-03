@@ -34,7 +34,7 @@ const hospitalData = {
   },
 };
 
-const BASE_URL = "http://192.168.90.135:5000/api";
+const BASE_URL = "http://192.168.90.143:5000/api";
 
 export default function Add_Patient() {
   const [formData, setFormData] = useState({

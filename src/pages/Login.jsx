@@ -3,11 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button, Form, InputGroup } from "react-bootstrap";
 
 import logo from "/src/assets/images/logo/icon-logo.png";
-// import facebook from "/src/assets/images/auth/1.png";
-// import google from "/src/assets/images/auth/2.png";
 
 export default function Login() {
-  // Use navigate to redirect after login
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -29,19 +26,14 @@ export default function Login() {
     setShowPassword(!showPassword);
   };
 
-  // Simulating login logic
+  // Updated login logic
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Dummy check for user role (You would actually check the credentials from an API)
     if (formData.username === "doctor" && formData.password === "password") {
-      // Redirect to Doctor Panel if credentials match
-      navigate("/doctor-panel");
-    } else if (
-      formData.username === "reception" &&
-      formData.password === "password"
-    ) {
-      // Redirect to Reception Panel if credentials match
+      navigate("/d");
+    }
+    if (formData.username === "reception" && formData.password === "password") {
       navigate("/");
     } else {
       alert("Invalid credentials");
@@ -52,7 +44,8 @@ export default function Login() {
     <div
       className="auth-main"
       style={{
-        background: "linear-gradient(to right,rgb(45, 14, 78),rgb(31, 106, 236))", // Gradient background
+        background:
+          "linear-gradient(to right,rgb(45, 14, 78),rgb(31, 106, 236))",
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
@@ -75,7 +68,7 @@ export default function Login() {
           style={{ textAlign: "center", marginBottom: "20px" }}
         >
           <div className="codex-brand">
-            <Link to={"/"}>
+            <Link to={""}>
               <img className="img-fluid" src={logo} alt="" />
               <span className="ms-2">HMS</span>
             </Link>
@@ -83,13 +76,6 @@ export default function Login() {
           <h3 style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
             Welcome to HMS
           </h3>
-          <h6 style={{ fontSize: "14px", color: "#777" }}>
-            don't have an account?
-            <Link className="text-primary" to={"/register"}>
-              {" "}
-              create an account
-            </Link>
-          </h6>
         </div>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-20">
